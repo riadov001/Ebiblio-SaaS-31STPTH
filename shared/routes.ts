@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertResourceSchema, insertRewardSchema, resources, rewards, userRewards } from './schema';
+import { insertResourceSchema, insertRewardSchema, resources, rewards, userRewards, users } from './schema';
 
 // ============================================
 // SHARED ERROR SCHEMAS
@@ -21,6 +21,61 @@ export const errorSchemas = {
 // API CONTRACT
 // ============================================
 export const api = {
+  admin: {
+    users: {
+      list: {
+        method: 'GET' as const,
+        path: '/api/admin/users' as const,
+        responses: {
+          200: z.array(z.custom<typeof users.$inferSelect>()),
+        },
+      },
+      updateRole: {
+        method: 'PATCH' as const,
+        path: '/api/admin/users/:id/role' as const,
+        input: z.object({
+          role: z.enum(['student', 'professor', 'director', 'super_admin']),
+        }),
+        responses: {
+          200: z.custom<typeof users.$inferSelect>(),
+          404: errorSchemas.notFound,
+        },
+      },
+      updatePoints: {
+        method: 'PATCH' as const,
+        path: '/api/admin/users/:id/points' as const,
+        input: z.object({
+          points: z.number(),
+        }),
+        responses: {
+          200: z.custom<typeof users.$inferSelect>(),
+          404: errorSchemas.notFound,
+        },
+      },
+      delete: {
+        method: 'DELETE' as const,
+        path: '/api/admin/users/:id' as const,
+        responses: {
+          204: z.void(),
+          404: errorSchemas.notFound,
+        },
+      },
+    },
+    stats: {
+      method: 'GET' as const,
+      path: '/api/admin/stats' as const,
+      responses: {
+        200: z.object({
+          totalUsers: z.number(),
+          totalResources: z.number(),
+          pendingResources: z.number(),
+          approvedResources: z.number(),
+          totalRewards: z.number(),
+          usersByRole: z.record(z.number()),
+        }),
+      },
+    },
+  },
   resources: {
     list: {
       method: 'GET' as const,

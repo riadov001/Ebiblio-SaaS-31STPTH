@@ -13,8 +13,9 @@ import Resources from "@/pages/Resources";
 import ExternalSearch from "@/pages/ExternalSearch";
 import Rewards from "@/pages/Rewards";
 import AdminApprovals from "@/pages/AdminApprovals";
+import SuperAdmin from "@/pages/SuperAdmin";
 
-function ProtectedRoute({ component: Component, adminOnly = false }: { component: React.ComponentType, adminOnly?: boolean }) {
+function ProtectedRoute({ component: Component, adminOnly = false, superAdminOnly = false }: { component: React.ComponentType, adminOnly?: boolean, superAdminOnly?: boolean }) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -29,9 +30,13 @@ function ProtectedRoute({ component: Component, adminOnly = false }: { component
     return <Redirect to="/" />;
   }
 
-  // Example role check - adjust based on actual user schema
   const userRole = (user as any).role || 'student';
-  if (adminOnly && userRole !== 'director' && userRole !== 'professor') {
+  
+  if (superAdminOnly && userRole !== 'super_admin') {
+    return <Redirect to="/dashboard" />;
+  }
+
+  if (adminOnly && userRole !== 'director' && userRole !== 'professor' && userRole !== 'super_admin') {
     return <Redirect to="/dashboard" />;
   }
 
@@ -71,6 +76,9 @@ function Router() {
       </Route>
       <Route path="/approvals">
         <ProtectedRoute component={AdminApprovals} adminOnly={true} />
+      </Route>
+      <Route path="/admin">
+        <ProtectedRoute component={SuperAdmin} superAdminOnly={true} />
       </Route>
 
       {/* Fallback */}

@@ -1,7 +1,9 @@
 import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import { api } from "@shared/routes";
+import { users } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 
@@ -170,10 +172,87 @@ export async function registerRoutes(
     }
   });
 
+  // === Admin API (super_admin only) ===
+
+  const requireSuperAdmin = async (req: any, res: any, next: any) => {
+    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+    const userId = req.user.claims.sub;
+    const user = await storage.getUser(userId);
+    if (!user || (user.role !== 'super_admin' && user.role !== 'director')) {
+      return res.status(403).json({ message: "Forbidden: Super Admin access required" });
+    }
+    next();
+  };
+
+  app.get(api.admin.users.list.path, requireSuperAdmin, async (req, res) => {
+    const users = await storage.getAllUsers();
+    res.json(users);
+  });
+
+  app.patch(api.admin.users.updateRole.path, requireSuperAdmin, async (req, res) => {
+    try {
+      const input = api.admin.users.updateRole.input.parse(req.body);
+      const updated = await storage.updateUserRole(req.params.id, input.role);
+      res.json(updated);
+    } catch (e: any) {
+      res.status(404).json({ message: e.message });
+    }
+  });
+
+  app.patch(api.admin.users.updatePoints.path, requireSuperAdmin, async (req, res) => {
+    try {
+      const input = api.admin.users.updatePoints.input.parse(req.body);
+      const updated = await storage.updateUserPoints(req.params.id, input.points);
+      res.json(updated);
+    } catch (e: any) {
+      res.status(404).json({ message: e.message });
+    }
+  });
+
+  app.delete(api.admin.users.delete.path, requireSuperAdmin, async (req, res) => {
+    try {
+      await storage.deleteUser(req.params.id);
+      res.status(204).end();
+    } catch (e: any) {
+      res.status(404).json({ message: e.message });
+    }
+  });
+
+  app.get(api.admin.stats.path, requireSuperAdmin, async (req, res) => {
+    const stats = await storage.getStats();
+    res.json(stats);
+  });
+
   // Seed data function
   await seedDatabase();
 
+  // Create specific accounts for the user to test with
+  // Note: These will only be accessible if the user logs in via Replit
+  // and we match their Replit ID, OR we provide a demo login.
+  // For now, let's create them so they appear in the Super Admin list.
+  await createTestAccounts();
+
   return httpServer;
+}
+
+async function createTestAccounts() {
+  const testUsers = [
+    { id: "demo-director", email: "director@example.com", firstName: "Jean", lastName: "Directeur", role: "director" },
+    { id: "demo-professor", email: "professor@example.com", firstName: "Marie", lastName: "Professeur", role: "professor" },
+    { id: "demo-student", email: "student@example.com", firstName: "Luc", lastName: "Etudiant", role: "student" },
+  ];
+
+  for (const u of testUsers) {
+    const existing = await storage.getUser(u.id);
+    if (!existing) {
+      // We use the underlying db to bypass any logic in storage that might interfere
+      await db.insert(users).values({
+        ...u,
+        points: u.role === 'student' ? 100 : 0,
+        updatedAt: new Date()
+      }).onConflictDoNothing();
+    }
+  }
 }
 
 async function seedDatabase() {

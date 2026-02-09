@@ -4,7 +4,7 @@ import {
   type Reward, type InsertReward, type UserReward, type User
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, like, desc } from "drizzle-orm";
+import { eq, and, like, desc, sql, count } from "drizzle-orm";
 import { authStorage } from "./replit_integrations/auth/storage";
 
 export interface IStorage {
@@ -20,9 +20,23 @@ export interface IStorage {
   createReward(reward: InsertReward): Promise<Reward>;
   redeemReward(userId: string, rewardId: number): Promise<UserReward>;
 
-  // Users (proxy to authStorage + points updates)
+  // Users
   getUser(id: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+  updateUserRole(id: string, role: string): Promise<User>;
+  updateUserPoints(id: string, points: number): Promise<User>;
+  deleteUser(id: string): Promise<void>;
   addPoints(userId: string, points: number): Promise<User>;
+
+  // Stats
+  getStats(): Promise<{
+    totalUsers: number;
+    totalResources: number;
+    pendingResources: number;
+    approvedResources: number;
+    totalRewards: number;
+    usersByRole: Record<string, number>;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -106,6 +120,33 @@ export class DatabaseStorage implements IStorage {
     return await authStorage.getUser(id);
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async updateUserRole(id: string, role: string): Promise<User> {
+    const [updated] = await db.update(users)
+      .set({ role, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    if (!updated) throw new Error("User not found");
+    return updated;
+  }
+
+  async updateUserPoints(id: string, points: number): Promise<User> {
+    const [updated] = await db.update(users)
+      .set({ points, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    if (!updated) throw new Error("User not found");
+    return updated;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(userRewards).where(eq(userRewards.userId, id));
+    await db.delete(users).where(eq(users.id, id));
+  }
+
   async addPoints(userId: string, points: number): Promise<User> {
     const user = await this.getUser(userId);
     if (!user) throw new Error("User not found");
@@ -116,6 +157,34 @@ export class DatabaseStorage implements IStorage {
       .returning();
       
     return updated;
+  }
+
+  async getStats(): Promise<{
+    totalUsers: number;
+    totalResources: number;
+    pendingResources: number;
+    approvedResources: number;
+    totalRewards: number;
+    usersByRole: Record<string, number>;
+  }> {
+    const [userCount] = await db.select({ count: count() }).from(users);
+    const [resourceCount] = await db.select({ count: count() }).from(resources);
+    const [pendingCount] = await db.select({ count: count() }).from(resources).where(eq(resources.status, 'pending'));
+    const [approvedCount] = await db.select({ count: count() }).from(resources).where(eq(resources.status, 'approved'));
+    const [rewardCount] = await db.select({ count: count() }).from(rewards);
+
+    const roleGroups = await db.select({ role: users.role, count: count() }).from(users).groupBy(users.role);
+    const usersByRole: Record<string, number> = {};
+    roleGroups.forEach(r => { usersByRole[r.role] = r.count; });
+
+    return {
+      totalUsers: userCount.count,
+      totalResources: resourceCount.count,
+      pendingResources: pendingCount.count,
+      approvedResources: approvedCount.count,
+      totalRewards: rewardCount.count,
+      usersByRole,
+    };
   }
 }
 

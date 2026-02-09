@@ -7,7 +7,8 @@ import {
   Award, 
   CheckSquare, 
   LogOut, 
-  BookOpen
+  BookOpen,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,9 +16,7 @@ export function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   
-  // Hardcoded role for demonstration if user schema doesn't have it yet
-  // In a real app, this comes from user.role
-  const userRole = (user as any)?.role || 'student'; // Fallback to student
+  const userRole = (user as any)?.role || 'student';
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -26,9 +25,12 @@ export function Sidebar() {
     { href: "/rewards", label: "Rewards", icon: Award },
   ];
 
-  // Admin only items
-  if (userRole === 'director' || userRole === 'professor') {
+  if (userRole === 'director' || userRole === 'professor' || userRole === 'super_admin') {
     navItems.push({ href: "/approvals", label: "Approvals", icon: CheckSquare });
+  }
+
+  if (userRole === 'super_admin') {
+    navItems.push({ href: "/admin", label: "Super Admin", icon: Shield });
   }
 
   return (

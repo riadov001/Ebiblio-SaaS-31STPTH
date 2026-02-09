@@ -103,6 +103,33 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
+    // Development shortcut: allow logging in as a specific role for testing
+    if (process.env.NODE_ENV === 'development' && req.query.as) {
+      const role = req.query.as as string;
+      const demoUser = {
+        claims: {
+          sub: `demo-${role}`,
+          email: `${role}@example.com`,
+          first_name: "Demo",
+          last_name: role.charAt(0).toUpperCase() + role.slice(1),
+        },
+        expires_at: Math.floor(Date.now() / 1000) + 3600
+      };
+      
+      req.login(demoUser, async (err) => {
+        if (err) return next(err);
+        await authStorage.upsertUser({
+          id: demoUser.claims.sub,
+          email: demoUser.claims.email,
+          firstName: demoUser.claims.first_name,
+          lastName: demoUser.claims.last_name,
+          role: role === 'super_admin' ? 'super_admin' : role,
+        });
+        return res.redirect("/");
+      });
+      return;
+    }
+
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
