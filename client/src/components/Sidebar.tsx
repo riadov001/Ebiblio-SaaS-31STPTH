@@ -19,14 +19,14 @@ export function Sidebar() {
   const userRole = (user as any)?.role || 'student';
 
   const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/resources", label: "Library Catalog", icon: Library },
-    { href: "/search", label: "External Search", icon: Search },
-    { href: "/rewards", label: "Rewards", icon: Award },
+    { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+    { href: "/resources", label: "Catalogue", icon: Library },
+    { href: "/search", label: "Recherche externe", icon: Search },
+    { href: "/rewards", label: "Récompenses", icon: Award },
   ];
 
   if (userRole === 'director' || userRole === 'professor' || userRole === 'super_admin') {
-    navItems.push({ href: "/approvals", label: "Approvals", icon: CheckSquare });
+    navItems.push({ href: "/approvals", label: "Approbations", icon: CheckSquare });
   }
 
   if (userRole === 'super_admin') {
@@ -77,7 +77,7 @@ export function Sidebar() {
           className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
         >
           <LogOut className="w-4 h-4" />
-          <span>Sign Out</span>
+          <span>Déconnexion</span>
         </button>
       </div>
     </aside>

@@ -38,15 +38,15 @@ export default function ExternalSearch() {
       <Sidebar />
       <main className="flex-1 md:ml-64 p-8">
         <header className="max-w-3xl mx-auto text-center mb-10">
-          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">External Database Search</h1>
-          <p className="text-slate-500">Search millions of books and articles from OpenLibrary and DOAJ.</p>
+          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">Recherche dans les Bases de Données Externes</h1>
+          <p className="text-slate-500">Recherchez parmi des millions de livres et d'articles d'OpenLibrary et DOAJ.</p>
         </header>
 
         <div className="max-w-2xl mx-auto mb-12">
           <form onSubmit={handleSearch} className="relative mb-4">
             <input 
               className="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 shadow-sm text-lg focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all pl-14"
-              placeholder="Search by title, author, or ISBN..."
+              placeholder="Rechercher par titre, auteur ou ISBN..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -55,7 +55,7 @@ export default function ExternalSearch() {
               type="submit"
               className="absolute right-3 top-1/2 -translate-y-1/2 btn-primary py-2 px-6 h-auto"
             >
-              Search
+              Rechercher
             </button>
           </form>
 
@@ -69,7 +69,7 @@ export default function ExternalSearch() {
                   onChange={() => setSource(s as any)}
                   className="w-4 h-4 text-primary focus:ring-primary" 
                 />
-                <span className="capitalize text-sm font-medium text-slate-600">{s === 'all' ? 'All Sources' : s}</span>
+                <span className="capitalize text-sm font-medium text-slate-600">{s === 'all' ? 'Toutes les sources' : s}</span>
               </label>
             ))}
           </div>

@@ -14,16 +14,16 @@ export default function Landing() {
               <span className="font-display font-bold text-xl text-slate-900">E-Biblio UPC</span>
             </div>
             <div className="flex items-center gap-4">
-              <Link href="/api/login">
+              <a href="/api/login">
                 <button className="text-slate-600 hover:text-primary font-medium text-sm px-4 py-2 transition-colors">
-                  Sign In
+                  Connexion
                 </button>
-              </Link>
-              <Link href="/api/login">
+              </a>
+              <a href="/api/login">
                 <button className="bg-primary text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
-                  Get Started
+                  Commencer
                 </button>
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -45,7 +45,7 @@ export default function Landing() {
               transition={{ duration: 0.5 }}
               className="text-5xl md:text-6xl font-display font-bold text-slate-900 tracking-tight mb-6"
             >
-              Your Gateway to <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Infinite Knowledge</span>
+              Votre portail vers le <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Savoir Infini</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -53,7 +53,7 @@ export default function Landing() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="text-xl text-slate-600 mb-10 leading-relaxed"
             >
-              Access thousands of books, articles, and academic resources from OpenLibrary, DOAJ, and our internal collections. Designed for the scholars of tomorrow.
+              Accédez à des milliers de livres, articles et ressources académiques d'OpenLibrary, DOAJ et de nos collections internes. Conçu pour les chercheurs de demain.
             </motion.p>
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -61,11 +61,11 @@ export default function Landing() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="flex justify-center gap-4"
             >
-              <Link href="/api/login">
+              <a href="/api/login">
                 <button className="flex items-center gap-2 bg-primary text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-xl shadow-primary/30 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-                  Explore Library <ArrowRight className="w-5 h-5" />
+                  Explorer la Bibliothèque <ArrowRight className="w-5 h-5" />
                 </button>
-              </Link>
+              </a>
             </motion.div>
           </div>
         </div>
@@ -79,22 +79,22 @@ export default function Landing() {
               <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-6">
                 <Globe className="w-6 h-6" />
               </div>
-              <h3 className="font-display font-bold text-xl mb-3">Global Resources</h3>
-              <p className="text-slate-600">Instantly search and access materials from OpenLibrary, DOAJ, Persée, and more.</p>
+              <h3 className="font-display font-bold text-xl mb-3">Ressources Globales</h3>
+              <p className="text-slate-600">Recherchez et accédez instantanément aux documents d'OpenLibrary, DOAJ, Persée et plus encore.</p>
             </div>
             <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary/20 hover:shadow-lg transition-all duration-300">
               <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-6">
                 <GraduationCap className="w-6 h-6" />
               </div>
-              <h3 className="font-display font-bold text-xl mb-3">Academic Growth</h3>
-              <p className="text-slate-600">Curated collections for students and professors to support research and learning.</p>
+              <h3 className="font-display font-bold text-xl mb-3">Croissance Académique</h3>
+              <p className="text-slate-600">Collections curatées pour étudiants et professeurs afin de soutenir la recherche et l'apprentissage.</p>
             </div>
             <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary/20 hover:shadow-lg transition-all duration-300">
               <div className="w-12 h-12 bg-teal-100 text-teal-600 rounded-xl flex items-center justify-center mb-6">
                 <Users className="w-6 h-6" />
               </div>
-              <h3 className="font-display font-bold text-xl mb-3">Collaborative</h3>
-              <p className="text-slate-600">Students and professors can submit resources for approval, building a living library.</p>
+              <h3 className="font-display font-bold text-xl mb-3">Collaboratif</h3>
+              <p className="text-slate-600">Les étudiants et professeurs peuvent soumettre des ressources pour approbation, bâtissant une bibliothèque vivante.</p>
             </div>
           </div>
         </div>

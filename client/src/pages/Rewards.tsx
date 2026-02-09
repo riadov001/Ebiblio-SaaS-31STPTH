@@ -19,14 +19,14 @@ export default function Rewards() {
         <header className="mb-8 bg-gradient-to-r from-primary to-accent p-8 rounded-3xl text-white shadow-lg shadow-primary/20">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-display font-bold mb-2">Student Rewards</h1>
-              <p className="opacity-90">Redeem your hard-earned points for exclusive perks.</p>
+              <h1 className="text-3xl font-display font-bold mb-2">Récompenses Étudiants</h1>
+              <p className="opacity-90">Échangez vos points durement gagnés contre des avantages exclusifs.</p>
             </div>
             <div className="text-right">
-              <div className="text-sm opacity-75 uppercase tracking-wider font-semibold">Your Balance</div>
+              <div className="text-sm opacity-75 uppercase tracking-wider font-semibold">Votre Solde</div>
               <div className="text-4xl font-display font-bold flex items-center gap-2 justify-end">
                 <Award className="w-8 h-8 text-yellow-300" />
-                {userPoints}
+                {user?.points || 0}
               </div>
             </div>
           </div>
@@ -64,7 +64,7 @@ export default function Rewards() {
                       )}
                     >
                       {!canAfford && <Lock className="w-3 h-3" />}
-                      {redeemMutation.isPending ? "Processing..." : "Redeem"}
+                      {redeemMutation.isPending ? "Traitement..." : "Échanger"}
                     </button>
                   </div>
                 </div>

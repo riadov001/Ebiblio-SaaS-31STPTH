@@ -10,20 +10,20 @@ export default function Dashboard() {
 
   // Mock stats - in production, these would come from an aggregation endpoint
   const stats = [
-    { label: "Total Resources", value: resources?.length || 0, icon: BookOpen, color: "text-blue-600", bg: "bg-blue-100" },
-    { label: "Active Students", value: "1,204", icon: Users, color: "text-purple-600", bg: "bg-purple-100" },
-    { label: "Pending Approvals", value: resources?.filter(r => r.status === 'pending').length || 0, icon: Clock, color: "text-orange-600", bg: "bg-orange-100" },
-    { label: "Rewards Redeemed", value: "89", icon: Award, color: "text-green-600", bg: "bg-green-100" },
+    { label: "Total Ressources", value: resources?.length || 0, icon: BookOpen, color: "text-blue-600", bg: "bg-blue-100" },
+    { label: "Étudiants Actifs", value: "1,204", icon: Users, color: "text-purple-600", bg: "bg-purple-100" },
+    { label: "Attente Approbation", value: resources?.filter(r => r.status === 'pending').length || 0, icon: Clock, color: "text-orange-600", bg: "bg-orange-100" },
+    { label: "Récompenses Réclamées", value: "89", icon: Award, color: "text-green-600", bg: "bg-green-100" },
   ];
 
   const chartData = [
-    { name: 'Mon', books: 4 },
-    { name: 'Tue', books: 3 },
-    { name: 'Wed', books: 10 },
-    { name: 'Thu', books: 7 },
-    { name: 'Fri', books: 5 },
-    { name: 'Sat', books: 2 },
-    { name: 'Sun', books: 1 },
+    { name: 'Lun', books: 4 },
+    { name: 'Mar', books: 3 },
+    { name: 'Mer', books: 10 },
+    { name: 'Jeu', books: 7 },
+    { name: 'Ven', books: 5 },
+    { name: 'Sam', books: 2 },
+    { name: 'Dim', books: 1 },
   ];
 
   return (
@@ -32,9 +32,9 @@ export default function Dashboard() {
       <main className="flex-1 md:ml-64 p-8">
         <header className="mb-8">
           <h1 className="text-3xl font-display font-bold text-slate-900">
-            Welcome back, {user?.firstName}!
+            Bon retour, {user?.firstName}!
           </h1>
-          <p className="text-slate-500 mt-2">Here's what's happening in your library today.</p>
+          <p className="text-slate-500 mt-2">Voici ce qui se passe dans votre bibliothèque aujourd'hui.</p>
         </header>
 
         {/* Stats Grid */}
@@ -55,7 +55,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Chart Section */}
           <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-display font-bold mb-6">Weekly Activity</h2>
+            <h2 className="text-lg font-display font-bold mb-6">Activité Hebdomadaire</h2>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
@@ -74,7 +74,7 @@ export default function Dashboard() {
 
           {/* Recent Resources */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-display font-bold mb-6">Recent Additions</h2>
+            <h2 className="text-lg font-display font-bold mb-6">Ajouts Récents</h2>
             <div className="space-y-4">
               {isLoading ? (
                 <div className="animate-pulse space-y-4">
