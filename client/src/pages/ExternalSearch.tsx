@@ -42,44 +42,44 @@ export default function ExternalSearch() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-8">
-        <header className="max-w-3xl mx-auto text-center mb-10">
-          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">Recherche dans les Bases de Données Externes</h1>
-          <p className="text-slate-500">Recherchez parmi des millions de livres et d'articles d'OpenLibrary et DOAJ.</p>
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
+        <header className="max-w-3xl mx-auto text-center mb-6 md:mb-10">
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900 mb-2 leading-tight">Recherche de Ressources Externes</h1>
+          <p className="text-sm md:text-base text-slate-500">Accédez aux bases de données mondiales (OpenLibrary, DOAJ).</p>
         </header>
 
-        <div className="max-w-2xl mx-auto mb-12">
-          <form onSubmit={handleSearch} className="relative mb-4">
+        <div className="max-w-2xl mx-auto mb-8 md:mb-12">
+          <form onSubmit={handleSearch} className="relative mb-6">
             <input 
-              className="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 shadow-sm text-lg focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all pl-14"
-              placeholder="Rechercher par titre, auteur ou ISBN..."
+              className="w-full px-4 md:px-6 py-3 md:py-4 rounded-2xl bg-white border border-slate-200 shadow-sm text-base md:text-lg focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all pl-12 md:pl-14 pr-32 md:pr-36"
+              placeholder="Titre, auteur ou ISBN..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 w-6 h-6" />
+            <Search className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 md:w-6 md:h-6" />
             <button 
               type="submit"
-              className="absolute right-3 top-1/2 -translate-y-1/2 btn-primary py-2 px-6 h-auto"
+              className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 btn-primary py-1.5 md:py-2 px-4 md:px-6 h-auto text-xs md:text-sm"
             >
               Rechercher
             </button>
           </form>
 
-          <div className="flex flex-wrap justify-center gap-6 mt-6">
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Source</span>
-              <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 md:gap-8 bg-white/50 p-4 rounded-2xl border border-slate-100">
+            <div className="flex flex-col items-center gap-1.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Source</span>
+              <div className="flex gap-4">
                 {['all', 'openlibrary', 'doaj'].map((s) => (
-                  <label key={s} className="flex items-center gap-2 cursor-pointer group">
+                  <label key={s} className="flex items-center gap-1.5 cursor-pointer group">
                     <input 
                       type="radio" 
                       name="source" 
                       checked={source === s} 
                       onChange={() => setSource(s as any)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-slate-300" 
+                      className="w-3.5 h-3.5 text-primary focus:ring-primary border-slate-300" 
                     />
                     <span className={cn(
-                      "capitalize text-sm font-medium transition-colors",
+                      "capitalize text-xs font-semibold transition-colors",
                       source === s ? "text-primary" : "text-slate-500 group-hover:text-slate-700"
                     )}>
                       {s === 'all' ? 'Toutes' : s}
@@ -89,26 +89,26 @@ export default function ExternalSearch() {
               </div>
             </div>
 
-            <div className="w-px h-10 bg-slate-200 hidden sm:block" />
+            <div className="w-px h-6 bg-slate-200 hidden sm:block" />
 
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Catégorie</span>
-              <div className="flex gap-3">
+            <div className="flex flex-col items-center gap-1.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Type</span>
+              <div className="flex gap-4">
                 {[
-                  { id: 'all', label: 'Toutes' },
+                  { id: 'all', label: 'Tout' },
                   { id: 'book', label: 'Livres' },
                   { id: 'article', label: 'Articles' }
                 ].map((c) => (
-                  <label key={c.id} className="flex items-center gap-2 cursor-pointer group">
+                  <label key={c.id} className="flex items-center gap-1.5 cursor-pointer group">
                     <input 
                       type="radio" 
                       name="category" 
                       checked={category === c.id} 
                       onChange={() => setCategory(c.id as any)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-slate-300" 
+                      className="w-3.5 h-3.5 text-primary focus:ring-primary border-slate-300" 
                     />
                     <span className={cn(
-                      "capitalize text-sm font-medium transition-colors",
+                      "capitalize text-xs font-semibold transition-colors",
                       category === c.id ? "text-primary" : "text-slate-500 group-hover:text-slate-700"
                     )}>
                       {c.label}
@@ -121,7 +121,7 @@ export default function ExternalSearch() {
         </div>
 
         {/* Results */}
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto px-1 md:px-0">
           {isLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />

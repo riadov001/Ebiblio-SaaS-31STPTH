@@ -28,31 +28,31 @@ export default function SuperAdmin() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-8 pt-16 md:pt-8">
-        <header className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
+        <header className="mb-6 md:mb-8 text-center md:text-left">
+          <div className="flex flex-col md:flex-row items-center gap-3 mb-2 justify-center md:justify-start">
             <Shield className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-display font-bold text-slate-900" data-testid="text-admin-title">
+            <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900 leading-tight" data-testid="text-admin-title">
               Panneau Super Admin
             </h1>
           </div>
-          <p className="text-slate-500">Contrôle total des utilisateurs, ressources et récompenses.</p>
+          <p className="text-sm md:text-base text-slate-500">Contrôle complet de la plateforme E-Biblio.</p>
         </header>
 
-        <div className="flex gap-2 mb-8 border-b border-slate-200 pb-1 overflow-x-auto">
+        <div className="flex gap-2 mb-6 md:mb-8 border-b border-slate-200 pb-1 overflow-x-auto no-scrollbar scroll-smooth">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               data-testid={`button-tab-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap",
+                "flex items-center gap-2 px-3 md:px-4 py-2 text-xs md:text-sm font-semibold rounded-t-lg transition-colors whitespace-nowrap shrink-0",
                 activeTab === tab.id
                   ? "bg-white text-primary border border-slate-200 border-b-white -mb-[1px]"
                   : "text-slate-500 hover:text-slate-700"
               )}
             >
-              <tab.icon className="w-4 h-4" />
+              <tab.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
               {tab.label}
             </button>
           ))}

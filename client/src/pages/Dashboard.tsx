@@ -36,32 +36,32 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-8 pt-16 md:pt-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-slate-900">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
+        <header className="mb-6 md:mb-8 text-center md:text-left">
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">
             Bon retour, {user?.firstName} !
           </h1>
-          <p className="text-slate-500 mt-2">Voici ce qui se passe dans votre bibliothèque aujourd'hui.</p>
+          <p className="text-slate-500 mt-2 text-sm md:text-base">Voici ce qui se passe dans votre bibliothèque aujourd'hui.</p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
           {statCards.map((stat) => (
-            <div key={stat.label} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm" data-testid={`stat-${stat.label}`}>
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 ${stat.bg} rounded-xl flex items-center justify-center`}>
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
+            <div key={stat.label} className="bg-white rounded-2xl p-4 md:p-6 border border-slate-100 shadow-sm" data-testid={`stat-${stat.label}`}>
+              <div className="flex items-center justify-between mb-2 md:mb-4">
+                <div className={`w-10 h-10 md:w-12 md:h-12 ${stat.bg} rounded-xl flex items-center justify-center`}>
+                  <stat.icon className={`w-5 h-5 md:w-6 md:h-6 ${stat.color}`} />
                 </div>
               </div>
-              <p className="text-2xl font-display font-bold text-slate-900">{stat.value}</p>
-              <p className="text-sm text-slate-500">{stat.label}</p>
+              <p className="text-xl md:text-2xl font-display font-bold text-slate-900">{stat.value}</p>
+              <p className="text-xs md:text-sm text-slate-500 truncate">{stat.label}</p>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-display font-bold mb-6">Activité Hebdomadaire</h2>
-            <div className="h-[300px] w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+          <div className="lg:col-span-2 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <h2 className="text-base md:text-lg font-display font-bold mb-4 md:mb-6">Activité Hebdomadaire</h2>
+            <div className="h-[250px] md:h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />

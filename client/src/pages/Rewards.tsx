@@ -14,17 +14,17 @@ export default function Rewards() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-8 pt-16 md:pt-8">
-        <header className="mb-8 bg-gradient-to-r from-primary to-accent p-8 rounded-3xl text-white shadow-lg shadow-primary/20">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-display font-bold mb-2">Récompenses Étudiants</h1>
-              <p className="opacity-90">Échangez vos points durement gagnés contre des avantages exclusifs.</p>
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
+        <header className="mb-6 md:mb-8 bg-gradient-to-r from-primary to-accent p-6 md:p-8 rounded-2xl md:rounded-3xl text-white shadow-lg shadow-primary/20">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="text-center md:text-left w-full md:w-auto">
+              <h1 className="text-2xl md:text-3xl font-display font-bold mb-2">Récompenses Étudiants</h1>
+              <p className="opacity-90 text-sm md:text-base">Échangez vos points contre des avantages exclusifs.</p>
             </div>
-            <div className="text-left sm:text-right">
-              <div className="text-sm opacity-75 uppercase tracking-wider font-semibold">Votre Solde</div>
-              <div className="text-4xl font-display font-bold flex items-center gap-2">
-                <Award className="w-8 h-8 text-yellow-300" />
+            <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm border border-white/10 w-full md:w-auto flex flex-col items-center md:items-end">
+              <div className="text-[10px] md:text-xs opacity-75 uppercase tracking-widest font-bold mb-1">Votre Solde Actuel</div>
+              <div className="text-3xl md:text-4xl font-display font-bold flex items-center gap-2">
+                <Award className="w-7 h-7 md:w-8 md:h-8 text-secondary" />
                 {userPoints}
               </div>
             </div>
@@ -32,17 +32,17 @@ export default function Rewards() {
         </header>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[1, 2, 3].map(i => <div key={i} className="h-64 bg-white rounded-2xl animate-pulse" />)}
           </div>
         ) : rewards?.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
             <Gift className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-900">Aucune récompense disponible</h3>
-            <p className="text-slate-500">Les récompenses seront bientôt ajoutées par l'administration.</p>
+            <p className="text-slate-500 text-sm">Les récompenses seront bientôt ajoutées par l'administration.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {rewards?.map((reward) => {
               const canAfford = userPoints >= reward.pointsRequired;
               

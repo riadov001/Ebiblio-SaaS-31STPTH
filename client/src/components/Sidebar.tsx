@@ -112,10 +112,10 @@ export function Sidebar() {
     <>
       <button 
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-40 md:hidden bg-white border border-slate-200 rounded-lg p-2 shadow-sm"
+        className="fixed top-4 left-4 z-[100] md:hidden bg-primary border border-white/20 rounded-lg p-2 shadow-lg"
         data-testid="button-mobile-menu"
       >
-        <Menu className="w-5 h-5 text-slate-600" />
+        <Menu className="w-5 h-5 text-white" />
       </button>
 
       {mobileOpen && (

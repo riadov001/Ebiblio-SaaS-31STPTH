@@ -10,14 +10,14 @@ export default function AdminApprovals() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-slate-900">Approbations en Attente</h1>
-          <p className="text-slate-500 mt-1">Examinez les ressources soumises par les étudiants et le personnel.</p>
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
+        <header className="mb-6 md:mb-8 text-center md:text-left">
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900 leading-tight">Approbations en Attente</h1>
+          <p className="text-slate-500 mt-1 text-sm md:text-base">Examinez les nouvelles soumissions de ressources.</p>
         </header>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[1, 2, 3].map(i => <div key={i} className="h-64 bg-white rounded-xl animate-pulse" />)}
           </div>
         ) : resources?.length === 0 ? (
@@ -26,10 +26,10 @@ export default function AdminApprovals() {
               <CheckSquare className="w-8 h-8 text-green-500" />
             </div>
             <h3 className="text-lg font-semibold text-slate-900">Tout est à jour !</h3>
-            <p className="text-slate-500">Il n'y a aucune ressource en attente de révision.</p>
+            <p className="text-slate-500 text-sm">Aucune ressource en attente de révision.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {resources?.map((resource) => (
               <ResourceCard 
                 key={resource.id} 
