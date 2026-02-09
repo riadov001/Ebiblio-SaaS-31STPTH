@@ -48,9 +48,9 @@ export function Sidebar() {
     <>
       <div className="p-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm overflow-hidden p-1">
+          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm overflow-hidden p-0.5">
             <img 
-              src="https://upc.ac.cd/wp-content/uploads/2019/04/logo-upc.png" 
+              src="/attached_assets/Logo-UPC_1770677221935.jpg" 
               alt="UPC Logo" 
               className="w-full h-full object-contain"
             />
