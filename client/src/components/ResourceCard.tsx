@@ -75,17 +75,29 @@ export function ResourceCard({ resource, showActions = false }: ResourceCardProp
         </span>
       )}
 
-      <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between gap-3">
+      <div className="mt-auto pt-4 border-t border-slate-50 flex flex-col gap-3">
         {resource.url && (
-          <a 
-            href={resource.url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex-1 btn-secondary text-xs py-2 h-9"
-            data-testid={`link-resource-${resource.id}`}
-          >
-            Accéder <ExternalLink className="w-3 h-3 ml-2" />
-          </a>
+          <div className="flex gap-2 w-full">
+            <a 
+              href={resource.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex-1 btn-secondary text-xs py-2 h-9 flex items-center justify-center"
+              data-testid={`link-resource-${resource.id}`}
+            >
+              Consulter <ExternalLink className="w-3 h-3 ml-2" />
+            </a>
+            <a 
+              href={resource.url} 
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 bg-slate-900 text-white rounded-lg text-xs py-2 h-9 flex items-center justify-center hover:bg-slate-800 transition-colors"
+              data-testid={`download-resource-${resource.id}`}
+            >
+              Télécharger
+            </a>
+          </div>
         )}
 
         {isAdmin && showActions && resource.status === 'pending' && (

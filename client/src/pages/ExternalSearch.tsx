@@ -110,18 +110,31 @@ export default function ExternalSearch() {
                       {item.year && <p className="text-slate-400 text-xs">{item.year}</p>}
                     </div>
 
-                    <button 
-                      onClick={() => handleSave(item)}
-                      disabled={createMutation.isPending}
-                      className="shrink-0 btn-secondary h-10 w-10 p-0 rounded-full"
-                      title="Enregistrer dans la bibliothèque"
-                    >
-                      {createMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Plus className="w-5 h-5" />
+                    <div className="flex flex-col gap-2 shrink-0">
+                      <button 
+                        onClick={() => handleSave(item)}
+                        disabled={createMutation.isPending}
+                        className="btn-secondary h-10 w-10 p-0 rounded-full flex items-center justify-center"
+                        title="Enregistrer dans la bibliothèque"
+                      >
+                        {createMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Plus className="w-5 h-5" />
+                        )}
+                      </button>
+                      {item.url && (
+                        <a 
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="h-10 w-10 p-0 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200 transition-colors"
+                          title="Télécharger / Consulter"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
                       )}
-                    </button>
+                    </div>
                   </div>
                 ))
               )}
