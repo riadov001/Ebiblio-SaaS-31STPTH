@@ -47,9 +47,18 @@ export function Sidebar() {
   const sidebarContent = (
     <>
       <div className="p-6">
-        <div className="flex items-center gap-3 text-primary font-display font-bold text-xl">
-          <BookOpen className="w-8 h-8" />
-          <span>E-Biblio UPC</span>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm overflow-hidden p-1">
+            <img 
+              src="https://upc.ac.cd/wp-content/uploads/2019/04/logo-upc.png" 
+              alt="UPC Logo" 
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold tracking-tight text-white leading-none">UPC</h1>
+            <span className="text-[10px] text-white/70 uppercase tracking-widest mt-1">Bibliothèque</span>
+          </div>
         </div>
       </div>
 
@@ -62,11 +71,11 @@ export function Sidebar() {
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   "nav-item cursor-pointer", 
-                  isActive ? "active" : "text-slate-500"
+                  isActive ? "active" : "text-white/70"
                 )}
                 data-testid={`nav-${item.href.slice(1)}`}
               >
-                <item.icon className={cn("w-5 h-5", isActive ? "text-primary" : "text-slate-400")} />
+                <item.icon className={cn("w-5 h-5", isActive ? "text-secondary" : "text-white/50")} />
                 <span>{item.label}</span>
               </div>
             </Link>
@@ -74,22 +83,22 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-200">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-100 mb-3 shadow-sm">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+      <div className="p-4 border-t border-white/10">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/5 mb-3 shadow-sm backdrop-blur-sm">
+          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary font-bold shadow-inner">
             {user?.firstName?.[0] || 'U'}
           </div>
           <div className="overflow-hidden">
-            <p className="text-sm font-semibold truncate text-foreground">
+            <p className="text-sm font-semibold truncate text-white">
               {user?.firstName} {user?.lastName}
             </p>
-            <p className="text-xs text-muted-foreground">{roleLabels[userRole] || userRole}</p>
+            <p className="text-xs text-white/60">{roleLabels[userRole] || userRole}</p>
           </div>
         </div>
         
         <button 
           onClick={() => logout()}
-          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
           data-testid="button-logout"
         >
           <LogOut className="w-4 h-4" />
@@ -110,12 +119,12 @@ export function Sidebar() {
       </button>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="flex inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-64 bg-slate-50 border-r border-slate-200 flex flex-col">
+          <aside className="absolute inset-y-0 left-0 w-64 bg-primary border-r border-slate-200 flex flex-col text-white shadow-xl">
             <button 
               onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600"
+              className="absolute top-4 right-4 p-1 text-white/50 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
@@ -124,7 +133,7 @@ export function Sidebar() {
         </div>
       )}
 
-      <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-slate-50 border-r border-slate-200 hidden md:flex flex-col">
+      <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-primary border-r border-slate-200 hidden md:flex flex-col text-white shadow-xl">
         {sidebarContent}
       </aside>
     </>

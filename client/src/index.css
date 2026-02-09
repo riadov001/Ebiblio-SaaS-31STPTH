@@ -8,21 +8,21 @@
   --font-body: 'Inter', sans-serif;
   --font-display: 'Outfit', sans-serif;
 
-  /* Clean Blue & White Academic Theme */
-  --background: 210 40% 98%;    /* Soft blue-white */
+  /* UPC Official Colors: Deep Blue & Gold/Yellow */
+  --background: 210 20% 98%;    /* Off-white */
   --foreground: 222 47% 11%;    /* Dark slate */
   
-  --primary: 221 83% 53%;       /* Vibrant Blue */
+  --primary: 217 91% 25%;       /* UPC Deep Blue */
   --primary-foreground: 210 40% 98%;
   
-  --secondary: 0 0% 100%;       /* White cards */
+  --secondary: 45 93% 47%;      /* UPC Gold/Yellow */
   --secondary-foreground: 222 47% 11%;
   
   --muted: 214 32% 91%;         /* Light gray-blue */
   --muted-foreground: 215 16% 47%;
   
-  --accent: 199 89% 48%;        /* Sky blue for highlights */
-  --accent-foreground: 0 0% 100%;
+  --accent: 45 93% 47%;         /* Gold for highlights */
+  --accent-foreground: 222 47% 11%;
   
   --destructive: 0 84% 60%;
   --destructive-foreground: 210 40% 98%;
@@ -87,10 +87,10 @@
   }
 
   .nav-item {
-    @apply flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 hover:bg-white hover:text-primary hover:shadow-md dark:hover:bg-slate-800;
+    @apply flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white hover:shadow-md;
   }
 
   .nav-item.active {
-    @apply bg-white text-primary shadow-md dark:bg-slate-800;
+    @apply bg-white/10 text-white shadow-md border-l-4 border-secondary rounded-l-none rounded-r-xl;
   }
 }
