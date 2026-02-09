@@ -84,7 +84,7 @@ export default function ExternalSearch() {
           ) : results ? (
             <div className="grid gap-4">
               {results.length === 0 ? (
-                <div className="text-center text-slate-500 py-10">No results found. Try a different query.</div>
+                <div className="text-center text-slate-500 py-10">Aucun résultat trouvé. Essayez une autre recherche.</div>
               ) : (
                 results.map((item: any, idx: number) => (
                   <div key={idx} className="bg-white p-5 rounded-xl border border-slate-200 flex items-start gap-4 hover:shadow-md transition-shadow">
@@ -92,7 +92,7 @@ export default function ExternalSearch() {
                       <img src={item.coverUrl} alt="Cover" className="w-20 h-28 object-cover rounded shadow-sm bg-slate-100" />
                     ) : (
                       <div className="w-20 h-28 bg-slate-100 rounded flex items-center justify-center text-slate-400 text-xs text-center p-2">
-                        No Cover
+                        Pas d'image
                       </div>
                     )}
                     
@@ -114,7 +114,7 @@ export default function ExternalSearch() {
                       onClick={() => handleSave(item)}
                       disabled={createMutation.isPending}
                       className="shrink-0 btn-secondary h-10 w-10 p-0 rounded-full"
-                      title="Save to Library"
+                      title="Enregistrer dans la bibliothèque"
                     >
                       {createMutation.isPending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -129,7 +129,7 @@ export default function ExternalSearch() {
           ) : (
             <div className="text-center py-20 opacity-50">
               <Search className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-              <p>Enter a search term to find resources</p>
+              <p>Entrez un terme de recherche pour trouver des ressources</p>
             </div>
           )}
         </div>

@@ -77,8 +77,11 @@ export default function Resources() {
             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-slate-300" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-900">No resources found</h3>
-            <p className="text-slate-500">Try adjusting your search or filters.</p>
+            <h3 className="text-lg font-semibold text-slate-900">Aucune ressource trouvée</h3>
+            <p className="text-slate-500">Essayez d'ajuster votre recherche ou vos filtres.</p>
+            <Link href="/search">
+              <button className="mt-4 btn-primary">Rechercher des ressources externes</button>
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
