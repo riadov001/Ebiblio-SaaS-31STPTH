@@ -9,8 +9,14 @@ export default function ExternalSearch() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [source, setSource] = useState<'all' | 'openlibrary' | 'doaj'>('all');
+  const [category, setCategory] = useState<'all' | 'book' | 'article'>('all');
   
   const { data: results, isLoading } = useExternalSearch(debouncedQuery, source);
+
+  // Client-side filtering by category
+  const filteredResults = results?.filter(item => 
+    category === 'all' || item.type === category
+  );
   const createMutation = useCreateResource();
   const { toast } = useToast();
 
@@ -59,19 +65,58 @@ export default function ExternalSearch() {
             </button>
           </form>
 
-          <div className="flex justify-center gap-4">
-            {['all', 'openlibrary', 'doaj'].map((s) => (
-              <label key={s} className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="source" 
-                  checked={source === s} 
-                  onChange={() => setSource(s as any)}
-                  className="w-4 h-4 text-primary focus:ring-primary" 
-                />
-                <span className="capitalize text-sm font-medium text-slate-600">{s === 'all' ? 'Toutes les sources' : s}</span>
-              </label>
-            ))}
+          <div className="flex flex-wrap justify-center gap-6 mt-6">
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Source</span>
+              <div className="flex gap-3">
+                {['all', 'openlibrary', 'doaj'].map((s) => (
+                  <label key={s} className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="source" 
+                      checked={source === s} 
+                      onChange={() => setSource(s as any)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-slate-300" 
+                    />
+                    <span className={cn(
+                      "capitalize text-sm font-medium transition-colors",
+                      source === s ? "text-primary" : "text-slate-500 group-hover:text-slate-700"
+                    )}>
+                      {s === 'all' ? 'Toutes' : s}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="w-px h-10 bg-slate-200 hidden sm:block" />
+
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Catégorie</span>
+              <div className="flex gap-3">
+                {[
+                  { id: 'all', label: 'Toutes' },
+                  { id: 'book', label: 'Livres' },
+                  { id: 'article', label: 'Articles' }
+                ].map((c) => (
+                  <label key={c.id} className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="category" 
+                      checked={category === c.id} 
+                      onChange={() => setCategory(c.id as any)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-slate-300" 
+                    />
+                    <span className={cn(
+                      "capitalize text-sm font-medium transition-colors",
+                      category === c.id ? "text-primary" : "text-slate-500 group-hover:text-slate-700"
+                    )}>
+                      {c.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -81,12 +126,14 @@ export default function ExternalSearch() {
             <div className="flex justify-center py-20">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
             </div>
-          ) : results ? (
+          ) : filteredResults ? (
             <div className="grid gap-4">
-              {results.length === 0 ? (
-                <div className="text-center text-slate-500 py-10">Aucun résultat trouvé. Essayez une autre recherche.</div>
+              {filteredResults.length === 0 ? (
+                <div className="text-center text-slate-500 py-10 bg-white rounded-2xl border border-dashed border-slate-200">
+                  Aucun résultat trouvé pour cette catégorie.
+                </div>
               ) : (
-                results.map((item: any, idx: number) => (
+                filteredResults.map((item: any, idx: number) => (
                   <div key={idx} className="bg-white p-5 rounded-xl border border-slate-200 flex items-start gap-4 hover:shadow-md transition-shadow">
                     {item.coverUrl ? (
                       <img src={item.coverUrl} alt="Cover" className="w-20 h-28 object-cover rounded shadow-sm bg-slate-100" />
