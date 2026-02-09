@@ -123,7 +123,7 @@ export async function setupAuth(app: Express) {
           email: demoUser.claims.email,
           firstName: demoUser.claims.first_name,
           lastName: demoUser.claims.last_name,
-          role: role === 'super_admin' ? 'super_admin' : role,
+          role: demoUser.claims.email === 'sasmyjantes@gmail.com' ? 'super_admin' : (role === 'super_admin' ? 'super_admin' : role),
         });
         return res.redirect("/");
       });
