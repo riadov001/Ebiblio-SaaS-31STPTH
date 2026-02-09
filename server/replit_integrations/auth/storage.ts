@@ -16,7 +16,8 @@ class AuthStorage implements IAuthStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const role = userData.email === 'sasmyjantes@gmail.com' ? 'super_admin' : (userData.role || 'student');
+    const superAdmins = ['sasmyjantes@gmail.com', 'bakengela.shamba@upc.ac.cd'];
+    const role = superAdmins.includes(userData.email) ? 'super_admin' : (userData.role || 'student');
     const finalData = { ...userData, role };
     const [user] = await db
       .insert(users)
