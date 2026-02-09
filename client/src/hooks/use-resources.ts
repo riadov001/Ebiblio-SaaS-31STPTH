@@ -2,8 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl, type CreateResourceRequest, type UpdateResourceRequest } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
 
-// === RESOURCES HOOKS ===
-
 export function useResources(filters?: { status?: string; type?: string; source?: string; search?: string }) {
   const queryParams = new URLSearchParams();
   if (filters) {
@@ -17,7 +15,7 @@ export function useResources(filters?: { status?: string; type?: string; source?
     queryFn: async () => {
       const url = `${api.resources.list.path}?${queryParams.toString()}`;
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch resources");
+      if (!res.ok) throw new Error("Échec du chargement des ressources");
       return api.resources.list.responses[200].parse(await res.json());
     },
   });
@@ -38,20 +36,20 @@ export function useCreateResource() {
       
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || "Failed to create resource");
+        throw new Error(error.message || "Échec de la création de la ressource");
       }
       return api.resources.create.responses[201].parse(await res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.resources.list.path] });
       toast({
-        title: "Resource Added",
-        description: "The resource has been successfully added to the library.",
+        title: "Ressource ajoutée",
+        description: "La ressource a été ajoutée avec succès à la bibliothèque.",
       });
     },
     onError: (error) => {
       toast({
-        title: "Error",
+        title: "Erreur",
         description: error.message,
         variant: "destructive",
       });
@@ -73,14 +71,14 @@ export function useUpdateResource() {
         credentials: "include",
       });
 
-      if (!res.ok) throw new Error("Failed to update resource");
+      if (!res.ok) throw new Error("Échec de la mise à jour");
       return api.resources.update.responses[200].parse(await res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.resources.list.path] });
       toast({
-        title: "Success",
-        description: "Resource updated successfully.",
+        title: "Succès",
+        description: "Ressource mise à jour avec succès.",
       });
     },
   });
@@ -98,19 +96,17 @@ export function useDeleteResource() {
         credentials: "include",
       });
 
-      if (!res.ok) throw new Error("Failed to delete resource");
+      if (!res.ok) throw new Error("Échec de la suppression");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.resources.list.path] });
       toast({
-        title: "Deleted",
-        description: "Resource removed from library.",
+        title: "Supprimée",
+        description: "Ressource retirée de la bibliothèque.",
       });
     },
   });
 }
-
-// === EXTERNAL SEARCH HOOK ===
 
 export function useExternalSearch(query: string, source: 'openlibrary' | 'doaj' | 'all' = 'all') {
   return useQuery({
@@ -119,10 +115,10 @@ export function useExternalSearch(query: string, source: 'openlibrary' | 'doaj' 
       if (!query) return [];
       const url = `${api.external.search.path}?q=${encodeURIComponent(query)}&source=${source}`;
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to search external sources");
+      if (!res.ok) throw new Error("Échec de la recherche externe");
       return api.external.search.responses[200].parse(await res.json());
     },
     enabled: !!query && query.length > 2,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { 
@@ -8,13 +9,16 @@ import {
   CheckSquare, 
   LogOut, 
   BookOpen,
-  Shield
+  Shield,
+  Menu,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
   
   const userRole = (user as any)?.role || 'student';
 
@@ -33,8 +37,15 @@ export function Sidebar() {
     navItems.push({ href: "/admin", label: "Super Admin", icon: Shield });
   }
 
-  return (
-    <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-slate-50 border-r border-slate-200 hidden md:flex flex-col">
+  const roleLabels: Record<string, string> = {
+    student: "Étudiant",
+    professor: "Professeur",
+    director: "Directeur",
+    super_admin: "Super Admin",
+  };
+
+  const sidebarContent = (
+    <>
       <div className="p-6">
         <div className="flex items-center gap-3 text-primary font-display font-bold text-xl">
           <BookOpen className="w-8 h-8" />
@@ -47,10 +58,14 @@ export function Sidebar() {
           const isActive = location === item.href;
           return (
             <Link key={item.href} href={item.href}>
-              <div className={cn(
-                "nav-item cursor-pointer", 
-                isActive ? "active" : "text-slate-500"
-              )}>
+              <div 
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "nav-item cursor-pointer", 
+                  isActive ? "active" : "text-slate-500"
+                )}
+                data-testid={`nav-${item.href.slice(1)}`}
+              >
                 <item.icon className={cn("w-5 h-5", isActive ? "text-primary" : "text-slate-400")} />
                 <span>{item.label}</span>
               </div>
@@ -68,18 +83,50 @@ export function Sidebar() {
             <p className="text-sm font-semibold truncate text-foreground">
               {user?.firstName} {user?.lastName}
             </p>
-            <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
+            <p className="text-xs text-muted-foreground">{roleLabels[userRole] || userRole}</p>
           </div>
         </div>
         
         <button 
           onClick={() => logout()}
           className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+          data-testid="button-logout"
         >
           <LogOut className="w-4 h-4" />
           <span>Déconnexion</span>
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      <button 
+        onClick={() => setMobileOpen(true)}
+        className="fixed top-4 left-4 z-40 md:hidden bg-white border border-slate-200 rounded-lg p-2 shadow-sm"
+        data-testid="button-mobile-menu"
+      >
+        <Menu className="w-5 h-5 text-slate-600" />
+      </button>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 w-64 bg-slate-50 border-r border-slate-200 flex flex-col">
+            <button 
+              onClick={() => setMobileOpen(false)}
+              className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+
+      <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-slate-50 border-r border-slate-200 hidden md:flex flex-col">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

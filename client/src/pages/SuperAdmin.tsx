@@ -19,34 +19,34 @@ export default function SuperAdmin() {
   const { user } = useAuth();
   
   const tabs = [
-    { id: 'overview' as Tab, label: 'Overview', icon: BarChart3 },
-    { id: 'users' as Tab, label: 'Users', icon: Users },
-    { id: 'resources' as Tab, label: 'Resources', icon: BookOpen },
-    { id: 'rewards' as Tab, label: 'Rewards', icon: Award },
+    { id: 'overview' as Tab, label: 'Vue d\'ensemble', icon: BarChart3 },
+    { id: 'users' as Tab, label: 'Utilisateurs', icon: Users },
+    { id: 'resources' as Tab, label: 'Ressources', icon: BookOpen },
+    { id: 'rewards' as Tab, label: 'Récompenses', icon: Award },
   ];
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-8">
+      <main className="flex-1 md:ml-64 p-8 pt-16 md:pt-8">
         <header className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Shield className="w-8 h-8 text-primary" />
             <h1 className="text-3xl font-display font-bold text-slate-900" data-testid="text-admin-title">
-              Super Admin Panel
+              Panneau Super Admin
             </h1>
           </div>
-          <p className="text-slate-500">Full control over users, resources, and rewards.</p>
+          <p className="text-slate-500">Contrôle total des utilisateurs, ressources et récompenses.</p>
         </header>
 
-        <div className="flex gap-2 mb-8 border-b border-slate-200 pb-1">
+        <div className="flex gap-2 mb-8 border-b border-slate-200 pb-1 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               data-testid={`button-tab-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors",
+                "flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap",
                 activeTab === tab.id
                   ? "bg-white text-primary border border-slate-200 border-b-white -mb-[1px]"
                   : "text-slate-500 hover:text-slate-700"
@@ -79,12 +79,19 @@ function OverviewTab() {
   }
 
   const statCards = [
-    { label: "Total Users", value: stats?.totalUsers || 0, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Total Resources", value: stats?.totalResources || 0, icon: BookOpen, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { label: "Pending Approvals", value: stats?.pendingResources || 0, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Approved Resources", value: stats?.approvedResources || 0, icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
-    { label: "Total Rewards", value: stats?.totalRewards || 0, icon: Award, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "Total Utilisateurs", value: stats?.totalUsers || 0, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Total Ressources", value: stats?.totalResources || 0, icon: BookOpen, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "En Attente", value: stats?.pendingResources || 0, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Approuvées", value: stats?.approvedResources || 0, icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
+    { label: "Récompenses", value: stats?.totalRewards || 0, icon: Award, color: "text-purple-600", bg: "bg-purple-50" },
   ];
+
+  const roleLabels: Record<string, string> = {
+    student: "Étudiant",
+    professor: "Professeur",
+    director: "Directeur",
+    super_admin: "Super Admin",
+  };
 
   return (
     <div>
@@ -105,12 +112,12 @@ function OverviewTab() {
 
       {stats?.usersByRole && (
         <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-          <h3 className="font-display font-bold text-lg mb-4">Users by Role</h3>
+          <h3 className="font-display font-bold text-lg mb-4">Utilisateurs par rôle</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(stats.usersByRole).map(([role, count]) => (
               <div key={role} className="text-center p-4 rounded-xl bg-slate-50">
                 <p className="text-2xl font-bold text-slate-900">{count as number}</p>
-                <p className="text-sm text-slate-500 capitalize">{role.replace('_', ' ')}</p>
+                <p className="text-sm text-slate-500">{roleLabels[role] || role}</p>
               </div>
             ))}
           </div>
@@ -143,9 +150,9 @@ function UsersTab() {
         <table className="w-full" data-testid="table-users">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100">
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">User</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Utilisateur</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rôle</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Points</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
@@ -172,9 +179,9 @@ function UsersTab() {
                     onChange={(e) => updateRoleMutation.mutate({ id: u.id, role: e.target.value })}
                     className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                   >
-                    <option value="student">Student</option>
-                    <option value="professor">Professor</option>
-                    <option value="director">Director</option>
+                    <option value="student">Étudiant</option>
+                    <option value="professor">Professeur</option>
+                    <option value="director">Directeur</option>
                     <option value="super_admin">Super Admin</option>
                   </select>
                 </td>
@@ -193,13 +200,13 @@ function UsersTab() {
                         className="text-xs text-primary font-medium"
                         data-testid={`button-save-points-${u.id}`}
                       >
-                        Save
+                        OK
                       </button>
                       <button
                         onClick={() => setEditingPoints(null)}
                         className="text-xs text-slate-400"
                       >
-                        Cancel
+                        Annuler
                       </button>
                     </div>
                   ) : (
@@ -215,7 +222,7 @@ function UsersTab() {
                 <td className="px-6 py-4">
                   <button
                     onClick={() => {
-                      if (confirm("Are you sure you want to delete this user?")) {
+                      if (confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
                         deleteUserMutation.mutate(u.id);
                       }
                     }}
@@ -231,7 +238,7 @@ function UsersTab() {
         </table>
       </div>
       {(!users || (users as any[]).length === 0) && (
-        <div className="text-center py-12 text-slate-400">No users found.</div>
+        <div className="text-center py-12 text-slate-400">Aucun utilisateur trouvé.</div>
       )}
     </div>
   );
@@ -243,9 +250,16 @@ function ResourcesTab() {
   const updateMutation = useUpdateResource();
   const deleteMutation = useDeleteResource();
 
+  const statusLabels: Record<string, string> = {
+    '': 'Toutes',
+    'pending': 'En attente',
+    'approved': 'Approuvées',
+    'rejected': 'Rejetées',
+  };
+
   return (
     <div>
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
         {['', 'pending', 'approved', 'rejected'].map((status) => (
           <button
             key={status}
@@ -256,7 +270,7 @@ function ResourcesTab() {
               statusFilter === status ? "bg-primary text-white" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
             )}
           >
-            {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'All'}
+            {statusLabels[status]}
           </button>
         ))}
       </div>
@@ -269,10 +283,10 @@ function ResourcesTab() {
             <table className="w-full" data-testid="table-resources">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Title</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Titre</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Source</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Statut</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -281,20 +295,22 @@ function ResourcesTab() {
                   <tr key={r.id} className="hover:bg-slate-50/50 transition-colors" data-testid={`row-resource-${r.id}`}>
                     <td className="px-6 py-4">
                       <p className="font-medium text-slate-900 truncate max-w-xs">{r.title}</p>
-                      <p className="text-xs text-slate-400">{r.author || 'Unknown author'}</p>
+                      <p className="text-xs text-slate-400">{r.author || 'Auteur inconnu'}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 capitalize">{r.type}</span>
+                      <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 capitalize">
+                        {r.type === 'book' ? 'Livre' : r.type === 'article' ? 'Article' : r.type}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 capitalize">{r.source}</td>
                     <td className="px-6 py-4">
                       <span className={cn(
-                        "text-xs font-medium px-2.5 py-1 rounded-full capitalize",
+                        "text-xs font-medium px-2.5 py-1 rounded-full",
                         r.status === 'approved' && "bg-green-50 text-green-700",
                         r.status === 'pending' && "bg-amber-50 text-amber-700",
                         r.status === 'rejected' && "bg-red-50 text-red-700",
                       )}>
-                        {r.status}
+                        {r.status === 'approved' ? 'Approuvée' : r.status === 'pending' ? 'En attente' : 'Rejetée'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -303,7 +319,7 @@ function ResourcesTab() {
                           <button
                             onClick={() => updateMutation.mutate({ id: r.id, status: 'approved' })}
                             className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Approve"
+                            title="Approuver"
                             data-testid={`button-approve-${r.id}`}
                           >
                             <CheckCircle className="w-4 h-4" />
@@ -313,7 +329,7 @@ function ResourcesTab() {
                           <button
                             onClick={() => updateMutation.mutate({ id: r.id, status: 'rejected' })}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Reject"
+                            title="Rejeter"
                             data-testid={`button-reject-${r.id}`}
                           >
                             <XCircle className="w-4 h-4" />
@@ -321,7 +337,7 @@ function ResourcesTab() {
                         )}
                         <button
                           onClick={() => {
-                            if (confirm("Delete this resource?")) deleteMutation.mutate(r.id);
+                            if (confirm("Supprimer cette ressource ?")) deleteMutation.mutate(r.id);
                           }}
                           className="p-2 text-slate-400 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                           data-testid={`button-delete-resource-${r.id}`}
@@ -336,7 +352,7 @@ function ResourcesTab() {
             </table>
           </div>
           {(!resources || resources.length === 0) && (
-            <div className="text-center py-12 text-slate-400">No resources found.</div>
+            <div className="text-center py-12 text-slate-400">Aucune ressource trouvée.</div>
           )}
         </div>
       )}
@@ -353,7 +369,7 @@ function RewardsTab() {
 
   const handleCreate = () => {
     if (!formData.title || !formData.description) {
-      toast({ title: "Validation Error", description: "Title and description are required.", variant: "destructive" });
+      toast({ title: "Erreur de validation", description: "Le titre et la description sont requis.", variant: "destructive" });
       return;
     }
     createMutation.mutate(formData, {
@@ -366,24 +382,24 @@ function RewardsTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-display font-bold text-slate-900">Manage Rewards</h2>
+      <div className="flex justify-between items-center mb-6 gap-4">
+        <h2 className="text-lg font-display font-bold text-slate-900">Gérer les récompenses</h2>
         <button
           onClick={() => setShowForm(!showForm)}
           data-testid="button-add-reward"
           className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          Add Reward
+          Ajouter
         </button>
       </div>
 
       {showForm && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
-          <h3 className="font-display font-bold mb-4">New Reward</h3>
+          <h3 className="font-display font-bold mb-4">Nouvelle récompense</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Titre</label>
               <input
                 type="text"
                 value={formData.title}
@@ -393,7 +409,7 @@ function RewardsTab() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Points Required</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Points requis</label>
               <input
                 type="number"
                 value={formData.pointsRequired}
@@ -413,7 +429,7 @@ function RewardsTab() {
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Image URL (optional)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">URL de l'image (optionnel)</label>
               <input
                 type="text"
                 value={formData.imageUrl}
@@ -430,13 +446,13 @@ function RewardsTab() {
               data-testid="button-save-reward"
               className="px-6 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {createMutation.isPending ? "Saving..." : "Save Reward"}
+              {createMutation.isPending ? "Enregistrement..." : "Enregistrer"}
             </button>
             <button
               onClick={() => setShowForm(false)}
               className="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"
             >
-              Cancel
+              Annuler
             </button>
           </div>
         </div>

@@ -7,7 +7,7 @@ export function useAdminUsers() {
     queryKey: [api.admin.users.list.path],
     queryFn: async () => {
       const res = await fetch(api.admin.users.list.path, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch users");
+      if (!res.ok) throw new Error("Échec du chargement des utilisateurs");
       return res.json();
     },
   });
@@ -18,7 +18,7 @@ export function useAdminStats() {
     queryKey: [api.admin.stats.path],
     queryFn: async () => {
       const res = await fetch(api.admin.stats.path, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch stats");
+      if (!res.ok) throw new Error("Échec du chargement des statistiques");
       return res.json();
     },
   });
@@ -37,16 +37,16 @@ export function useUpdateUserRole() {
         body: JSON.stringify({ role }),
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to update role");
+      if (!res.ok) throw new Error("Échec de la mise à jour du rôle");
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.admin.users.list.path] });
       queryClient.invalidateQueries({ queryKey: [api.admin.stats.path] });
-      toast({ title: "Role Updated", description: "User role has been changed." });
+      toast({ title: "Rôle mis à jour", description: "Le rôle de l'utilisateur a été modifié." });
     },
     onError: (error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     },
   });
 }
@@ -64,15 +64,15 @@ export function useUpdateUserPoints() {
         body: JSON.stringify({ points }),
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to update points");
+      if (!res.ok) throw new Error("Échec de la mise à jour des points");
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.admin.users.list.path] });
-      toast({ title: "Points Updated", description: "User points have been updated." });
+      toast({ title: "Points mis à jour", description: "Les points de l'utilisateur ont été modifiés." });
     },
     onError: (error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     },
   });
 }
@@ -88,15 +88,15 @@ export function useDeleteUser() {
         method: api.admin.users.delete.method,
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to delete user");
+      if (!res.ok) throw new Error("Échec de la suppression");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.admin.users.list.path] });
       queryClient.invalidateQueries({ queryKey: [api.admin.stats.path] });
-      toast({ title: "User Deleted", description: "User has been removed from the system." });
+      toast({ title: "Utilisateur supprimé", description: "L'utilisateur a été retiré du système." });
     },
     onError: (error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     },
   });
 }

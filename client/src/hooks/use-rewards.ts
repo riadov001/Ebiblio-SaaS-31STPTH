@@ -7,7 +7,7 @@ export function useRewards() {
     queryKey: [api.rewards.list.path],
     queryFn: async () => {
       const res = await fetch(api.rewards.list.path, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch rewards");
+      if (!res.ok) throw new Error("Échec du chargement des récompenses");
       return api.rewards.list.responses[200].parse(await res.json());
     },
   });
@@ -26,14 +26,14 @@ export function useCreateReward() {
         credentials: "include",
       });
 
-      if (!res.ok) throw new Error("Failed to create reward");
+      if (!res.ok) throw new Error("Échec de la création");
       return api.rewards.create.responses[201].parse(await res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.rewards.list.path] });
       toast({
-        title: "Reward Created",
-        description: "New reward is now available for students.",
+        title: "Récompense créée",
+        description: "La nouvelle récompense est maintenant disponible pour les étudiants.",
       });
     },
   });
@@ -53,21 +53,21 @@ export function useRedeemReward() {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || "Failed to redeem reward");
+        throw new Error(error.message || "Échec de l'échange");
       }
       return api.rewards.redeem.responses[200].parse(await res.json());
     },
     onSuccess: () => {
-      // Invalidate both rewards list (if quantity tracked) and user points (if we had a user endpoint)
       queryClient.invalidateQueries({ queryKey: [api.rewards.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
-        title: "Reward Redeemed!",
-        description: "Check your email for redemption details.",
+        title: "Récompense échangée !",
+        description: "Vérifiez votre boîte mail pour les détails.",
       });
     },
     onError: (error) => {
       toast({
-        title: "Redemption Failed",
+        title: "Échange échoué",
         description: error.message,
         variant: "destructive",
       });
