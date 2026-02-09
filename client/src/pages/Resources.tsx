@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Sidebar } from "@/components/Sidebar";
 import { ResourceCard } from "@/components/ResourceCard";
 import { useResources } from "@/hooks/use-resources";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Library } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Resources() {

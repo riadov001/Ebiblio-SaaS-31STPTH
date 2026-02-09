@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { useExternalSearch, useCreateResource } from "@/hooks/use-resources";
-import { Search, Loader2, Plus, Check } from "lucide-react";
+import { Search, Loader2, Plus, Check, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
