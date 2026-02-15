@@ -6,10 +6,13 @@ E-Biblio UPC is a digital library management platform for Université Protestant
 
 Key features:
 - **Resource catalog** with internal and external search (OpenLibrary, DOAJ)
-- **Resource submission & approval workflow** (pending → approved/rejected)
-- **Role-based access control** (student, professor, director, super_admin)
-- **Points & rewards system** for student engagement
+- **Resource submission & approval workflow** (pending → approved/rejected) with server-side role enforcement
+- **Role-based access control** (student, professor, director, super_admin) enforced on both frontend and backend
+- **Points & rewards system** for student engagement (+50 pts approved resource, +10 pts suggestion)
 - **Admin dashboard** with user management, statistics, and full CRUD on resources/rewards
+- **Academic Sources Directory** — 40+ curated open access databases in 9 categories with search/filter
+- **Suggestions system** — Users propose new resources, admins approve/reject with notes
+- **Discipline filtering** — 17 academic disciplines for resource categorization
 - **Replit Auth** integration via OpenID Connect for authentication
 
 ## User Preferences

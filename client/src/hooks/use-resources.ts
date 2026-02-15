@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl, type CreateResourceRequest, type UpdateResourceRequest } from "@shared/routes";
+import { api, buildUrl } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
+import type { CreateResourceRequest, UpdateResourceRequest } from "@shared/routes";
 
-export function useResources(filters?: { status?: string; type?: string; source?: string; search?: string }) {
+export function useResources(filters?: { status?: string; type?: string; source?: string; discipline?: string; search?: string }) {
   const queryParams = new URLSearchParams();
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
@@ -16,7 +17,7 @@ export function useResources(filters?: { status?: string; type?: string; source?
       const url = `${api.resources.list.path}?${queryParams.toString()}`;
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Échec du chargement des ressources");
-      return api.resources.list.responses[200].parse(await res.json());
+      return res.json();
     },
   });
 }
@@ -38,13 +39,13 @@ export function useCreateResource() {
         const error = await res.json();
         throw new Error(error.message || "Échec de la création de la ressource");
       }
-      return api.resources.create.responses[201].parse(await res.json());
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.resources.list.path] });
       toast({
         title: "Ressource ajoutée",
-        description: "La ressource a été ajoutée avec succès à la bibliothèque.",
+        description: "La ressource a été soumise pour approbation.",
       });
     },
     onError: (error) => {
@@ -72,7 +73,7 @@ export function useUpdateResource() {
       });
 
       if (!res.ok) throw new Error("Échec de la mise à jour");
-      return api.resources.update.responses[200].parse(await res.json());
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.resources.list.path] });
@@ -116,7 +117,7 @@ export function useExternalSearch(query: string, source: 'openlibrary' | 'doaj' 
       const url = `${api.external.search.path}?q=${encodeURIComponent(query)}&source=${source}`;
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Échec de la recherche externe");
-      return api.external.search.responses[200].parse(await res.json());
+      return res.json();
     },
     enabled: !!query && query.length > 2,
     staleTime: 1000 * 60 * 5,

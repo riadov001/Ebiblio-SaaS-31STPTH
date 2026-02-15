@@ -14,6 +14,8 @@ import ExternalSearch from "@/pages/ExternalSearch";
 import Rewards from "@/pages/Rewards";
 import AdminApprovals from "@/pages/AdminApprovals";
 import SuperAdmin from "@/pages/SuperAdmin";
+import AcademicSources from "@/pages/AcademicSources";
+import Suggestions from "@/pages/Suggestions";
 
 function ProtectedRoute({ component: Component, adminOnly = false, superAdminOnly = false }: { component: React.ComponentType, adminOnly?: boolean, superAdminOnly?: boolean }) {
   const { user, isLoading } = useAuth();
@@ -73,6 +75,12 @@ function Router() {
       </Route>
       <Route path="/rewards">
         <ProtectedRoute component={Rewards} />
+      </Route>
+      <Route path="/sources">
+        <ProtectedRoute component={AcademicSources} />
+      </Route>
+      <Route path="/suggestions">
+        <ProtectedRoute component={Suggestions} />
       </Route>
       <Route path="/approvals">
         <ProtectedRoute component={AdminApprovals} adminOnly={true} />

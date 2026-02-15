@@ -11,7 +11,9 @@ import {
   BookOpen,
   Shield,
   Menu,
-  X
+  X,
+  Globe,
+  Lightbulb
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +28,8 @@ export function Sidebar() {
     { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
     { href: "/resources", label: "Catalogue", icon: Library },
     { href: "/search", label: "Recherche externe", icon: Search },
+    { href: "/sources", label: "Sources académiques", icon: Globe },
+    { href: "/suggestions", label: "Suggestions", icon: Lightbulb },
     { href: "/rewards", label: "Récompenses", icon: Award },
   ];
 
@@ -56,13 +60,13 @@ export function Sidebar() {
             />
           </div>
           <div className="flex flex-col">
-            <h1 className="text-xl font-bold tracking-tight text-white leading-none">UPC</h1>
-            <span className="text-[10px] text-white/70 uppercase tracking-widest mt-1">Bibliothèque</span>
+            <h1 className="text-xl font-bold tracking-tight text-white leading-none">E-Biblio</h1>
+            <span className="text-[10px] text-white/70 uppercase tracking-widest mt-1">UPC</span>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-4 space-y-2 py-4">
+      <nav className="flex-1 px-4 space-y-1 py-4 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = location === item.href;
           return (
@@ -76,7 +80,7 @@ export function Sidebar() {
                 data-testid={`nav-${item.href.slice(1)}`}
               >
                 <item.icon className={cn("w-5 h-5", isActive ? "text-secondary" : "text-white/50")} />
-                <span>{item.label}</span>
+                <span className="text-sm">{item.label}</span>
               </div>
             </Link>
           );
@@ -85,7 +89,7 @@ export function Sidebar() {
 
       <div className="p-4 border-t border-white/10">
         <div className="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/5 mb-3 shadow-sm backdrop-blur-sm">
-          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary font-bold shadow-inner">
+          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary font-bold shadow-inner shrink-0">
             {user?.firstName?.[0] || 'U'}
           </div>
           <div className="overflow-hidden">
@@ -119,12 +123,12 @@ export function Sidebar() {
       </button>
 
       {mobileOpen && (
-        <div className="flex inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-[90] md:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-64 bg-primary border-r border-slate-200 flex flex-col text-white shadow-xl">
             <button 
               onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 p-1 text-white/50 hover:text-white"
+              className="absolute top-4 right-4 p-1 text-white/50 hover:text-white z-10"
             >
               <X className="w-5 h-5" />
             </button>

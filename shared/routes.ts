@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertResourceSchema, insertRewardSchema, resources, rewards, userRewards, users } from './schema';
+import { insertResourceSchema, insertRewardSchema, insertSuggestionSchema, resources, rewards, userRewards, users, suggestions } from './schema';
 
 // ============================================
 // SHARED ERROR SCHEMAS
@@ -71,7 +71,11 @@ export const api = {
           pendingResources: z.number(),
           approvedResources: z.number(),
           totalRewards: z.number(),
+          totalSuggestions: z.number().optional(),
+          pendingSuggestions: z.number().optional(),
           usersByRole: z.record(z.number()),
+          resourcesByType: z.record(z.number()).optional(),
+          resourcesByDiscipline: z.record(z.number()).optional(),
         }),
       },
     },
@@ -84,6 +88,7 @@ export const api = {
         status: z.string().optional(),
         type: z.string().optional(),
         source: z.string().optional(),
+        discipline: z.string().optional(),
         search: z.string().optional(),
       }).optional(),
       responses: {
@@ -114,6 +119,11 @@ export const api = {
         status: z.enum(['pending', 'approved', 'rejected']).optional(),
         title: z.string().optional(),
         description: z.string().optional(),
+        type: z.string().optional(),
+        discipline: z.string().optional(),
+        language: z.string().optional(),
+        author: z.string().optional(),
+        url: z.string().optional(),
       }),
       responses: {
         200: z.custom<typeof resources.$inferSelect>(),
@@ -151,6 +161,43 @@ export const api = {
       },
     },
   },
+  suggestions: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/suggestions' as const,
+      responses: {
+        200: z.array(z.custom<typeof suggestions.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/suggestions' as const,
+      input: insertSuggestionSchema,
+      responses: {
+        201: z.custom<typeof suggestions.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/suggestions/:id' as const,
+      input: z.object({
+        status: z.enum(['pending', 'approved', 'rejected']).optional(),
+        adminNote: z.string().optional(),
+      }),
+      responses: {
+        200: z.custom<typeof suggestions.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    mySuggestions: {
+      method: 'GET' as const,
+      path: '/api/suggestions/mine' as const,
+      responses: {
+        200: z.array(z.custom<typeof suggestions.$inferSelect>()),
+      },
+    },
+  },
   rewards: {
     list: {
       method: 'GET' as const,
@@ -172,7 +219,7 @@ export const api = {
       path: '/api/rewards/:id/redeem' as const,
       responses: {
         200: z.custom<typeof userRewards.$inferSelect>(),
-        400: z.object({ message: z.string() }), // Not enough points
+        400: z.object({ message: z.string() }),
       },
     },
   }
@@ -189,3 +236,7 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
   }
   return url;
 }
+
+export type CreateResourceRequest = z.infer<typeof insertResourceSchema>;
+export type UpdateResourceRequest = z.infer<typeof api.resources.update.input>;
+export type CreateSuggestionRequest = z.infer<typeof insertSuggestionSchema>;
