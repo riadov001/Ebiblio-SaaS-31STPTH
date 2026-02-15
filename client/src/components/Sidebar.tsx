@@ -14,7 +14,8 @@ import {
   X,
   Globe,
   Lightbulb,
-  Upload
+  Upload,
+  HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ export function Sidebar() {
     { href: "/sources", label: "Sources académiques", icon: Globe },
     { href: "/suggestions", label: "Suggestions", icon: Lightbulb },
     { href: "/rewards", label: "Récompenses", icon: Award },
+    { href: "/documentation", label: "Guide & Aide", icon: HelpCircle },
   ];
 
   if (userRole === 'director' || userRole === 'professor' || userRole === 'super_admin') {

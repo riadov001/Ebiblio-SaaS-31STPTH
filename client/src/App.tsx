@@ -17,6 +17,7 @@ import SuperAdmin from "@/pages/SuperAdmin";
 import AcademicSources from "@/pages/AcademicSources";
 import Suggestions from "@/pages/Suggestions";
 import SubmitResource from "@/pages/SubmitResource";
+import Documentation from "@/pages/Documentation";
 
 function ProtectedRoute({ component: Component, adminOnly = false, superAdminOnly = false }: { component: React.ComponentType, adminOnly?: boolean, superAdminOnly?: boolean }) {
   const { user, isLoading } = useAuth();
@@ -91,6 +92,9 @@ function Router() {
       </Route>
       <Route path="/admin">
         <ProtectedRoute component={SuperAdmin} superAdminOnly={true} />
+      </Route>
+      <Route path="/documentation">
+        <ProtectedRoute component={Documentation} />
       </Route>
 
       {/* Fallback */}

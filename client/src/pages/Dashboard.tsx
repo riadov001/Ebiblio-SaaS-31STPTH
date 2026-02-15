@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/Sidebar";
 import { useResources } from "@/hooks/use-resources";
@@ -6,10 +7,12 @@ import { RESOURCE_TYPE_LABELS, DISCIPLINE_LABELS } from "@shared/schema";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { BookOpen, Award, Clock, TrendingUp, Library, Lightbulb, Plus, Search, Globe, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
+import { InteractiveGuide, GuideButton } from "@/components/InteractiveGuide";
 
 const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#6366F1'];
 
 export default function Dashboard() {
+  const [guideOpen, setGuideOpen] = useState(false);
   const { user } = useAuth();
   const { data: resources, isLoading } = useResources();
   const { data: stats } = useAdminStats();
@@ -195,6 +198,9 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        <GuideButton onClick={() => setGuideOpen(true)} />
+        <InteractiveGuide isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
       </main>
     </div>
   );
