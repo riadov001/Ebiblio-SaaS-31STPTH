@@ -7,8 +7,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { 
   Users, Shield, BookOpen, Award, Trash2, 
   ChevronDown, BarChart3, TrendingUp, 
-  CheckCircle, XCircle, Clock, Plus
+  CheckCircle, XCircle, Clock, Plus, Lightbulb
 } from "lucide-react";
+import { RESOURCE_TYPE_LABELS, DISCIPLINE_LABELS } from "@shared/schema";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -67,6 +69,8 @@ export default function SuperAdmin() {
   );
 }
 
+const CHART_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#6366F1'];
+
 function OverviewTab() {
   const { data: stats, isLoading } = useAdminStats();
 
@@ -84,6 +88,7 @@ function OverviewTab() {
     { label: "En Attente", value: stats?.pendingResources || 0, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
     { label: "Approuvées", value: stats?.approvedResources || 0, icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
     { label: "Récompenses", value: stats?.totalRewards || 0, icon: Award, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "Suggestions", value: stats?.totalSuggestions || 0, icon: Lightbulb, color: "text-orange-600", bg: "bg-orange-50" },
   ];
 
   const roleLabels: Record<string, string> = {
@@ -93,33 +98,82 @@ function OverviewTab() {
     super_admin: "Super Admin",
   };
 
+  const typeChartData = stats?.resourcesByType 
+    ? Object.entries(stats.resourcesByType).map(([key, val]) => ({
+        name: RESOURCE_TYPE_LABELS[key] || key,
+        value: val as number,
+      })).filter(d => d.value > 0)
+    : [];
+
+  const disciplineChartData = stats?.resourcesByDiscipline
+    ? Object.entries(stats.resourcesByDiscipline).map(([key, val]) => ({
+        name: DISCIPLINE_LABELS[key] || key,
+        count: val as number,
+      })).filter(d => d.count > 0).sort((a, b) => b.count - a.count).slice(0, 10)
+    : [];
+
   return (
-    <div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {statCards.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm" data-testid={`stat-${stat.label.toLowerCase().replace(/\s/g, '-')}`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", stat.bg)}>
-                <stat.icon className={cn("w-6 h-6", stat.color)} />
-              </div>
-              <TrendingUp className="w-4 h-4 text-slate-300" />
+          <div key={stat.label} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm" data-testid={`stat-${stat.label.toLowerCase().replace(/\s/g, '-')}`}>
+            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-3", stat.bg)}>
+              <stat.icon className={cn("w-5 h-5", stat.color)} />
             </div>
-            <p className="text-2xl font-display font-bold text-slate-900">{stat.value}</p>
-            <p className="text-sm text-slate-500">{stat.label}</p>
+            <p className="text-xl font-display font-bold text-slate-900">{stat.value}</p>
+            <p className="text-xs text-slate-500">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      {stats?.usersByRole && (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {stats?.usersByRole && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+            <h3 className="font-display font-bold text-base mb-4">Utilisateurs par rôle</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {Object.entries(stats.usersByRole).map(([role, count]) => (
+                <div key={role} className="text-center p-3 rounded-xl bg-slate-50">
+                  <p className="text-xl font-bold text-slate-900">{count as number}</p>
+                  <p className="text-xs text-slate-500">{roleLabels[role] || role}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {typeChartData.length > 0 && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+            <h3 className="font-display font-bold text-base mb-4">Ressources par Type</h3>
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={typeChartData} cx="50%" cy="50%" innerRadius={45} outerRadius={80} paddingAngle={3} dataKey="value">
+                    {typeChartData.map((_, i) => (
+                      <Cell key={`cell-${i}`} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {disciplineChartData.length > 0 && (
         <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-          <h3 className="font-display font-bold text-lg mb-4">Utilisateurs par rôle</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.entries(stats.usersByRole).map(([role, count]) => (
-              <div key={role} className="text-center p-4 rounded-xl bg-slate-50">
-                <p className="text-2xl font-bold text-slate-900">{count as number}</p>
-                <p className="text-sm text-slate-500">{roleLabels[role] || role}</p>
-              </div>
-            ))}
+          <h3 className="font-display font-bold text-base mb-4">Ressources par Discipline</h3>
+          <div className="h-[280px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={disciplineChartData} layout="vertical" margin={{ left: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" width={120} axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11 }} />
+                <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <Bar dataKey="count" fill="#2563EB" radius={[0, 4, 4, 0]} barSize={16} name="Ressources" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       )}
@@ -291,7 +345,7 @@ function ResourcesTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {resources?.map((r) => (
+                {resources?.map((r: any) => (
                   <tr key={r.id} className="hover:bg-slate-50/50 transition-colors" data-testid={`row-resource-${r.id}`}>
                     <td className="px-6 py-4">
                       <p className="font-medium text-slate-900 truncate max-w-xs">{r.title}</p>

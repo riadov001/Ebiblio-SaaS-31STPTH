@@ -14,7 +14,7 @@ export default function ExternalSearch() {
   const { data: results, isLoading } = useExternalSearch(debouncedQuery, source);
 
   // Client-side filtering by category
-  const filteredResults = results?.filter(item => 
+  const filteredResults = results?.filter((item: any) => 
     category === 'all' || item.type === category
   );
   const createMutation = useCreateResource();
@@ -35,7 +35,6 @@ export default function ExternalSearch() {
       externalId: item.externalId,
       url: item.url,
       publicationYear: item.year,
-      status: 'pending', // Default to pending approval
     });
   };
 

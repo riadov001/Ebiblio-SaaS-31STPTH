@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   Globe,
-  Lightbulb
+  Lightbulb,
+  Upload
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ export function Sidebar() {
   const navItems = [
     { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
     { href: "/resources", label: "Catalogue", icon: Library },
+    { href: "/submit", label: "Soumettre", icon: Upload },
     { href: "/search", label: "Recherche externe", icon: Search },
     { href: "/sources", label: "Sources académiques", icon: Globe },
     { href: "/suggestions", label: "Suggestions", icon: Lightbulb },
