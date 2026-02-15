@@ -2,17 +2,22 @@
 
 ## Overview
 
-E-Biblio UPC is a digital library management platform for Université Protestante au Congo (UPC). It allows students to browse, search, and submit academic resources (books, articles, journals), while professors and directors can approve submissions. The platform includes a gamification system where students earn points for contributions and redeem them for rewards. The UI is primarily in French.
+E-Biblio is a **multi-tenant SaaS** digital library management platform. Originally built for Université Protestante au Congo (UPC), it now supports multiple universities/libraries. Students browse, search, and submit academic resources; professors/directors approve submissions. The platform includes gamification (points/rewards) and is 100% French UI.
 
 Key features:
+- **Multi-tenant architecture** — `libraries` table as tenant model, all data scoped by libraryId
+- **Super Admin library management** — Create, edit, delete, toggle libraries with global stats & data export
 - **Resource catalog** with internal and external search (OpenLibrary, DOAJ)
-- **Resource submission & approval workflow** (pending → approved/rejected) with server-side role enforcement
+- **Resource submission & approval workflow** (pending -> approved/rejected) with server-side role enforcement
 - **Role-based access control** (student, professor, director, super_admin) enforced on both frontend and backend
 - **Points & rewards system** for student engagement (+50 pts approved resource, +10 pts suggestion)
 - **Admin dashboard** with user management, statistics, and full CRUD on resources/rewards
 - **Academic Sources Directory** — 40+ curated open access databases in 9 categories with search/filter
 - **Suggestions system** — Users propose new resources, admins approve/reject with notes
 - **Discipline filtering** — 17 academic disciplines for resource categorization
+- **Object Storage** — File uploads via Replit Object Storage with presigned URL flow
+- **Data export/backup** — Per-library and global JSON export for super admins
+- **User library assignment** — Super admins can transfer users between libraries
 - **Replit Auth** integration via OpenID Connect for authentication
 
 ## User Preferences
