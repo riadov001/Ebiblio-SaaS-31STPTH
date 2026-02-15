@@ -1,11 +1,42 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { api } from "@shared/routes";
 import { users } from "@shared/schema";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+
+async function getUserFromReq(req: any) {
+  if (!req.user) return null;
+  const userId = req.user.claims.sub;
+  return await storage.getUser(userId);
+}
+
+const requireAuth = async (req: any, res: Response, next: NextFunction) => {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+  next();
+};
+
+const requireSuperAdmin = async (req: any, res: Response, next: NextFunction) => {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+  const user = await getUserFromReq(req);
+  if (!user || user.role !== 'super_admin') {
+    return res.status(403).json({ message: "Forbidden: Super Admin access required" });
+  }
+  next();
+};
+
+const requireAdminRole = async (req: any, res: Response, next: NextFunction) => {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+  const user = await getUserFromReq(req);
+  if (!user || !['professor', 'director', 'super_admin'].includes(user.role)) {
+    return res.status(403).json({ message: "Forbidden: insufficient permissions" });
+  }
+  next();
+};
 
 export async function registerRoutes(
   httpServer: Server,
@@ -13,16 +44,27 @@ export async function registerRoutes(
 ): Promise<Server> {
   await setupAuth(app);
   registerAuthRoutes(app);
+  registerObjectStorageRoutes(app);
+
+  // === Library Info (public for current library context) ===
+  app.get('/api/library/current', async (req, res) => {
+    const user = await getUserFromReq(req);
+    const libraryId = user?.libraryId || 1;
+    const library = await storage.getLibrary(libraryId);
+    res.json(library || null);
+  });
 
   // === Resources API ===
 
   app.get(api.resources.list.path, async (req, res) => {
+    const user = await getUserFromReq(req);
     const filters = {
       status: req.query.status as string,
       type: req.query.type as string,
       source: req.query.source as string,
       discipline: req.query.discipline as string,
       search: req.query.search as string,
+      libraryId: user?.libraryId || undefined,
     };
     const resources = await storage.getResources(filters);
     res.json(resources);
@@ -34,17 +76,16 @@ export async function registerRoutes(
     res.json(resource);
   });
 
-  app.post(api.resources.create.path, async (req, res) => {
+  app.post(api.resources.create.path, requireAuth, async (req: any, res) => {
     try {
-      if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-
       const input = api.resources.create.input.parse(req.body);
+      const user = await getUserFromReq(req);
       const resource = await storage.createResource({
         ...input,
-        submittedBy: (req.user as any).claims.sub,
+        submittedBy: req.user.claims.sub,
         status: "pending",
+        libraryId: user?.libraryId || 1,
       });
-
       res.status(201).json(resource);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -57,15 +98,8 @@ export async function registerRoutes(
     }
   });
 
-  app.patch(api.resources.update.path, async (req, res) => {
+  app.patch(api.resources.update.path, requireAdminRole, async (req: any, res) => {
     try {
-      if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-      const userId = (req.user as any).claims.sub;
-      const user = await storage.getUser(userId);
-      if (!user || !['professor', 'director', 'super_admin'].includes(user.role)) {
-        return res.status(403).json({ message: "Forbidden: insufficient permissions" });
-      }
-
       const id = Number(req.params.id);
       const input = api.resources.update.input.parse(req.body);
       const updated = await storage.updateResource(id, input);
@@ -80,14 +114,8 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.resources.delete.path, async (req, res) => {
+  app.delete(api.resources.delete.path, requireAdminRole, async (req: any, res) => {
     try {
-      if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-      const userId = (req.user as any).claims.sub;
-      const user = await storage.getUser(userId);
-      if (!user || !['professor', 'director', 'super_admin'].includes(user.role)) {
-        return res.status(403).json({ message: "Forbidden: insufficient permissions" });
-      }
       await storage.deleteResource(Number(req.params.id));
       res.status(204).end();
     } catch (err) {
@@ -150,36 +178,34 @@ export async function registerRoutes(
 
   // === Suggestions API ===
 
-  app.get(api.suggestions.list.path, async (req, res) => {
-    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const userId = (req.user as any).claims.sub;
-    const user = await storage.getUser(userId);
-    if (!user || !['professor', 'director', 'super_admin'].includes(user.role)) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-    const filters = { status: req.query.status as string };
+  app.get(api.suggestions.list.path, requireAdminRole, async (req: any, res) => {
+    const user = await getUserFromReq(req);
+    const filters = {
+      status: req.query.status as string,
+      libraryId: user?.role === 'super_admin' ? undefined : user?.libraryId || undefined,
+    };
     const list = await storage.getSuggestions(filters);
     res.json(list);
   });
 
-  app.get(api.suggestions.mySuggestions.path, async (req, res) => {
-    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const userId = (req.user as any).claims.sub;
+  app.get(api.suggestions.mySuggestions.path, requireAuth, async (req: any, res) => {
+    const userId = req.user.claims.sub;
     const list = await storage.getUserSuggestions(userId);
     res.json(list);
   });
 
-  app.post(api.suggestions.create.path, async (req, res) => {
+  app.post(api.suggestions.create.path, requireAuth, async (req: any, res) => {
     try {
-      if (!req.user) return res.status(401).json({ message: "Unauthorized" });
       const input = api.suggestions.create.input.parse(req.body);
+      const user = await getUserFromReq(req);
       const suggestion = await storage.createSuggestion({
         ...input,
-        submittedBy: (req.user as any).claims.sub,
+        submittedBy: req.user.claims.sub,
         status: "pending",
+        libraryId: user?.libraryId || 1,
       });
 
-      await storage.addPoints((req.user as any).claims.sub, 10);
+      await storage.addPoints(req.user.claims.sub, 10);
 
       res.status(201).json(suggestion);
     } catch (err) {
@@ -193,14 +219,8 @@ export async function registerRoutes(
     }
   });
 
-  app.patch(api.suggestions.update.path, async (req, res) => {
+  app.patch(api.suggestions.update.path, requireAdminRole, async (req: any, res) => {
     try {
-      if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-      const userId = (req.user as any).claims.sub;
-      const user = await storage.getUser(userId);
-      if (!user || !['professor', 'director', 'super_admin'].includes(user.role)) {
-        return res.status(403).json({ message: "Forbidden: insufficient permissions" });
-      }
       const id = Number(req.params.id);
       const input = api.suggestions.update.input.parse(req.body);
       const updated = await storage.updateSuggestion(id, input);
@@ -213,20 +233,24 @@ export async function registerRoutes(
   // === Rewards API ===
 
   app.get(api.rewards.list.path, async (req, res) => {
-    const rewards = await storage.getRewards();
+    const user = await getUserFromReq(req);
+    const rewards = await storage.getRewards(user?.libraryId || undefined);
     res.json(rewards);
   });
 
-  app.post(api.rewards.create.path, async (req, res) => {
+  app.post(api.rewards.create.path, requireAdminRole, async (req: any, res) => {
     const input = api.rewards.create.input.parse(req.body);
-    const reward = await storage.createReward(input);
+    const user = await getUserFromReq(req);
+    const reward = await storage.createReward({
+      ...input,
+      libraryId: user?.libraryId || 1,
+    });
     res.status(201).json(reward);
   });
 
-  app.post(api.rewards.redeem.path, async (req, res) => {
+  app.post(api.rewards.redeem.path, requireAuth, async (req: any, res) => {
     try {
-      if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-      const userId = (req.user as any).claims.sub;
+      const userId = req.user.claims.sub;
       const rewardId = Number(req.params.id);
       
       const redemption = await storage.redeemReward(userId, rewardId);
@@ -238,19 +262,11 @@ export async function registerRoutes(
 
   // === Admin API ===
 
-  const requireSuperAdmin = async (req: any, res: any, next: any) => {
-    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const userId = req.user.claims.sub;
-    const user = await storage.getUser(userId);
-    if (!user || (user.role !== 'super_admin' && user.role !== 'director')) {
-      return res.status(403).json({ message: "Forbidden: Super Admin access required" });
-    }
-    next();
-  };
-
-  app.get(api.admin.users.list.path, requireSuperAdmin, async (req, res) => {
-    const users = await storage.getAllUsers();
-    res.json(users);
+  app.get(api.admin.users.list.path, requireAdminRole, async (req: any, res) => {
+    const user = await getUserFromReq(req);
+    const libraryId = user?.role === 'super_admin' ? undefined : user?.libraryId || undefined;
+    const allUsers = await storage.getAllUsers(libraryId);
+    res.json(allUsers);
   });
 
   app.patch(api.admin.users.updateRole.path, requireSuperAdmin, async (req, res) => {
@@ -263,7 +279,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch(api.admin.users.updatePoints.path, requireSuperAdmin, async (req, res) => {
+  app.patch(api.admin.users.updatePoints.path, requireAdminRole, async (req: any, res) => {
     try {
       const input = api.admin.users.updatePoints.input.parse(req.body);
       const updated = await storage.updateUserPoints(req.params.id, input.points);
@@ -282,9 +298,105 @@ export async function registerRoutes(
     }
   });
 
-  app.get(api.admin.stats.path, requireSuperAdmin, async (req, res) => {
-    const stats = await storage.getStats();
+  app.get(api.admin.stats.path, requireAdminRole, async (req: any, res) => {
+    const user = await getUserFromReq(req);
+    const libraryId = user?.role === 'super_admin' ? undefined : user?.libraryId || undefined;
+    const stats = await storage.getStats(libraryId);
     res.json(stats);
+  });
+
+  // === Library Management API (Super Admin) ===
+
+  app.get('/api/admin/libraries', requireSuperAdmin, async (req, res) => {
+    const libs = await storage.getLibraries();
+    res.json(libs);
+  });
+
+  app.post('/api/admin/libraries', requireSuperAdmin, async (req, res) => {
+    try {
+      const data = req.body;
+      if (!data.name || !data.slug || !data.universityName) {
+        return res.status(400).json({ message: "name, slug, and universityName are required" });
+      }
+      const existing = await storage.getLibraryBySlug(data.slug);
+      if (existing) {
+        return res.status(400).json({ message: "A library with this slug already exists" });
+      }
+      const lib = await storage.createLibrary(data);
+      res.status(201).json(lib);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.patch('/api/admin/libraries/:id', requireSuperAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const updated = await storage.updateLibrary(id, req.body);
+      res.json(updated);
+    } catch (e: any) {
+      res.status(404).json({ message: e.message });
+    }
+  });
+
+  app.delete('/api/admin/libraries/:id', requireSuperAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (id === 1) return res.status(400).json({ message: "Cannot delete the default library" });
+      await storage.deleteLibrary(id);
+      res.status(204).end();
+    } catch (e: any) {
+      res.status(404).json({ message: e.message });
+    }
+  });
+
+  // === Global Stats (Super Admin) ===
+
+  app.get('/api/admin/global-stats', requireSuperAdmin, async (req, res) => {
+    const stats = await storage.getGlobalStats();
+    res.json(stats);
+  });
+
+  // === Backup / Export API (Super Admin) ===
+
+  app.get('/api/admin/export/library/:id', requireSuperAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const data = await storage.exportLibraryData(id);
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="ebiblio-export-library-${id}-${Date.now()}.json"`);
+      res.json(data);
+    } catch (e: any) {
+      res.status(404).json({ message: e.message });
+    }
+  });
+
+  app.get('/api/admin/export/all', requireSuperAdmin, async (req, res) => {
+    try {
+      const data = await storage.exportAllData();
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="ebiblio-export-all-${Date.now()}.json"`);
+      res.json(data);
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  // === User Library Assignment (Super Admin) ===
+
+  app.patch('/api/admin/users/:id/library', requireSuperAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const { libraryId } = req.body;
+      const [updated] = await db.update(users)
+        .set({ libraryId, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+      if (!updated) return res.status(404).json({ message: "User not found" });
+      res.json(updated);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
   });
 
   await seedDatabase();
@@ -295,9 +407,9 @@ export async function registerRoutes(
 
 async function createTestAccounts() {
   const testUsers = [
-    { id: "demo-director", email: "director@example.com", firstName: "Jean", lastName: "Directeur", role: "director" },
-    { id: "demo-professor", email: "professor@example.com", firstName: "Marie", lastName: "Professeur", role: "professor" },
-    { id: "demo-student", email: "student@example.com", firstName: "Luc", lastName: "Etudiant", role: "student" },
+    { id: "demo-director", email: "director@example.com", firstName: "Jean", lastName: "Directeur", role: "director", libraryId: 1 },
+    { id: "demo-professor", email: "professor@example.com", firstName: "Marie", lastName: "Professeur", role: "professor", libraryId: 1 },
+    { id: "demo-student", email: "student@example.com", firstName: "Luc", lastName: "Etudiant", role: "student", libraryId: 1 },
   ];
 
   for (const u of testUsers) {
@@ -320,18 +432,21 @@ async function seedDatabase() {
       description: "Obtenez un repas gratuit à la cafétéria universitaire.",
       pointsRequired: 500,
       imageUrl: null,
+      libraryId: 1,
     });
     await storage.createReward({
       title: "Exonération Frais de Retard",
       description: "Annulation des frais de retard de la bibliothèque.",
       pointsRequired: 300,
       imageUrl: null,
+      libraryId: 1,
     });
     await storage.createReward({
       title: "Accès Revues Premium",
       description: "Un mois d'accès aux revues scientifiques premium.",
       pointsRequired: 1000,
       imageUrl: null,
+      libraryId: 1,
     });
   }
 }
