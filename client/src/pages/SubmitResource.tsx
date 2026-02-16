@@ -1,14 +1,63 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Sidebar } from "@/components/Sidebar";
 import { useCreateResource } from "@/hooks/use-resources";
 import { RESOURCE_TYPE_LABELS, DISCIPLINE_LABELS, SOURCE_LABELS } from "@shared/schema";
-import { Upload, Send, ArrowLeft } from "lucide-react";
+import { Upload, Send, ArrowLeft, FileText, Image, File, X, Eye, Loader2, AlertCircle, Paperclip } from "lucide-react";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
+const MAX_TOTAL_SIZE = 10 * 1024 * 1024;
+const ACCEPTED_FORMATS: Record<string, string> = {
+  "application/pdf": "PDF",
+  "application/msword": "DOC",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+  "application/vnd.ms-powerpoint": "PPT",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": "PPTX",
+  "application/vnd.ms-excel": "XLS",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX",
+  "text/plain": "TXT",
+  "text/csv": "CSV",
+  "image/jpeg": "JPEG",
+  "image/png": "PNG",
+  "image/webp": "WEBP",
+};
+const ACCEPT_STRING = Object.keys(ACCEPTED_FORMATS).join(",");
+
+interface UploadedFile {
+  file: File;
+  objectPath: string | null;
+  status: "pending" | "uploading" | "done" | "error";
+  progress: number;
+  error?: string;
+  previewUrl?: string;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+}
+
+function getFileIcon(type: string) {
+  if (type.startsWith("image/")) return Image;
+  if (type === "application/pdf") return FileText;
+  return File;
+}
 
 export default function SubmitResource() {
   const [, navigate] = useLocation();
   const createMutation = useCreateResource();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
   const [formData, setFormData] = useState({
     title: '',
     author: '',
@@ -23,9 +72,124 @@ export default function SubmitResource() {
     publicationYear: undefined as number | undefined,
   });
 
+  const totalSize = uploadedFiles.reduce((sum, f) => sum + f.file.size, 0);
+  const isUploading = uploadedFiles.some(f => f.status === "uploading");
+  const hasPendingOrError = uploadedFiles.some(f => f.status === "pending" || f.status === "error");
+  const filesReady = uploadedFiles.length === 0 || uploadedFiles.every(f => f.status === "done");
+
+  const uploadSingleFile = useCallback(async (file: File, index: number) => {
+    setUploadedFiles(prev => prev.map((f, i) => i === index ? { ...f, status: "uploading", progress: 10 } : f));
+
+    try {
+      const res = await fetch("/api/uploads/request-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type || "application/octet-stream" }),
+      });
+      if (!res.ok) throw new Error("Impossible d'obtenir l'URL d'envoi");
+      const { uploadURL, objectPath } = await res.json();
+
+      setUploadedFiles(prev => prev.map((f, i) => i === index ? { ...f, progress: 40 } : f));
+
+      const putRes = await fetch(uploadURL, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+      });
+      if (!putRes.ok) throw new Error("Échec de l'envoi du fichier");
+
+      setUploadedFiles(prev => prev.map((f, i) => i === index ? { ...f, status: "done", progress: 100, objectPath } : f));
+    } catch (err: any) {
+      setUploadedFiles(prev => prev.map((f, i) => i === index ? { ...f, status: "error", error: err.message, progress: 0 } : f));
+    }
+  }, []);
+
+  const addFiles = useCallback((files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const errors: string[] = [];
+    const validFiles: File[] = [];
+    let newTotal = totalSize;
+
+    for (const file of fileArray) {
+      if (!ACCEPTED_FORMATS[file.type]) {
+        errors.push(`"${file.name}" : format non supporté`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        errors.push(`"${file.name}" : dépasse 2 Mo (${formatFileSize(file.size)})`);
+        continue;
+      }
+      if (newTotal + file.size > MAX_TOTAL_SIZE) {
+        errors.push(`"${file.name}" : limite totale de 10 Mo dépassée`);
+        continue;
+      }
+      const isDuplicate = uploadedFiles.some(f => f.file.name === file.name && f.file.size === file.size);
+      if (isDuplicate) {
+        errors.push(`"${file.name}" : fichier déjà ajouté`);
+        continue;
+      }
+      validFiles.push(file);
+      newTotal += file.size;
+    }
+
+    if (errors.length > 0) {
+      toast({ title: "Fichiers refusés", description: errors.join(". "), variant: "destructive" });
+    }
+
+    if (validFiles.length > 0) {
+      const newEntries: UploadedFile[] = validFiles.map(file => ({
+        file,
+        objectPath: null,
+        status: "pending" as const,
+        progress: 0,
+        previewUrl: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+      }));
+
+      setUploadedFiles(prev => {
+        const updated = [...prev, ...newEntries];
+        const startIdx = prev.length;
+        validFiles.forEach((file, i) => {
+          uploadSingleFile(file, startIdx + i);
+        });
+        return updated;
+      });
+    }
+  }, [totalSize, uploadedFiles, toast, uploadSingleFile]);
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => {
+      const file = prev[index];
+      if (file.previewUrl) URL.revokeObjectURL(file.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+    if (previewFile && uploadedFiles[index] === previewFile) {
+      setPreviewFile(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
+  };
+
+  const normalizeObjectPath = (path: string) => path.startsWith("/objects/") ? path : `/objects/${path}`;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
+    if (isUploading) {
+      toast({ title: "Envoi en cours", description: "Veuillez attendre la fin de l'envoi des fichiers.", variant: "destructive" });
+      return;
+    }
+    if (hasPendingOrError) {
+      toast({ title: "Fichiers non prêts", description: "Certains fichiers ont échoué ou sont en attente. Supprimez-les ou réessayez avant de soumettre.", variant: "destructive" });
+      return;
+    }
+
+    const fileUrls = uploadedFiles.filter(f => f.status === "done" && f.objectPath).map(f => normalizeObjectPath(f.objectPath!));
 
     createMutation.mutate({
       title: formData.title,
@@ -39,6 +203,7 @@ export default function SubmitResource() {
       isbn: formData.isbn || undefined,
       publisher: formData.publisher || undefined,
       publicationYear: formData.publicationYear || undefined,
+      fileUrls: fileUrls.length > 0 ? fileUrls : undefined,
     }, {
       onSuccess: () => {
         navigate('/resources');
@@ -223,15 +388,128 @@ export default function SubmitResource() {
               </div>
             </div>
 
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                <span className="flex items-center gap-1.5">
+                  <Paperclip className="w-4 h-4" />
+                  Fichiers joints
+                </span>
+              </label>
+              <p className="text-xs text-slate-400 mb-3">
+                Max 2 Mo par fichier, 10 Mo au total. Formats : PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, CSV, JPEG, PNG, WEBP
+              </p>
+
+              <div
+                className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${
+                  isDragging ? "border-primary bg-primary/5" : "border-slate-200 hover:border-slate-300"
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                data-testid="dropzone-files"
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept={ACCEPT_STRING}
+                  onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }}
+                  className="hidden"
+                  data-testid="input-file-upload"
+                />
+                <Upload className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm text-slate-500">
+                  Glissez-déposez vos fichiers ici ou <span className="text-primary font-medium">parcourir</span>
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {formatFileSize(totalSize)} / {formatFileSize(MAX_TOTAL_SIZE)} utilisés
+                </p>
+              </div>
+
+              {uploadedFiles.length > 0 && (
+                <div className="mt-3 space-y-2" data-testid="list-uploaded-files">
+                  {uploadedFiles.map((uf, idx) => {
+                    const Icon = getFileIcon(uf.file.type);
+                    const ext = ACCEPTED_FORMATS[uf.file.type] || uf.file.name.split('.').pop()?.toUpperCase() || "?";
+                    return (
+                      <div
+                        key={`${uf.file.name}-${idx}`}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100"
+                        data-testid={`file-item-${idx}`}
+                      >
+                        {uf.previewUrl ? (
+                          <img src={uf.previewUrl} alt={uf.file.name} className="w-10 h-10 rounded object-cover shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-slate-200 flex items-center justify-center shrink-0">
+                            <Icon className="w-5 h-5 text-slate-500" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-700 truncate">{uf.file.name}</p>
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                            <span className="text-xs text-slate-400">{formatFileSize(uf.file.size)}</span>
+                            <Badge variant="outline" className="text-[10px] no-default-hover-elevate no-default-active-elevate">{ext}</Badge>
+                            {uf.status === "uploading" && (
+                              <span className="text-xs text-blue-500 flex items-center gap-1">
+                                <Loader2 className="w-3 h-3 animate-spin" /> Envoi {uf.progress}%
+                              </span>
+                            )}
+                            {uf.status === "done" && (
+                              <span className="text-xs text-green-600">Envoyé</span>
+                            )}
+                            {uf.status === "error" && (
+                              <span className="text-xs text-red-500 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" /> {uf.error}
+                              </span>
+                            )}
+                          </div>
+                          {uf.status === "uploading" && (
+                            <div className="w-full bg-slate-200 rounded-full h-1 mt-1.5">
+                              <div className="bg-primary h-1 rounded-full transition-all" style={{ width: `${uf.progress}%` }} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {uf.status === "done" && (uf.previewUrl || uf.file.type === "application/pdf") && (
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => { e.stopPropagation(); setPreviewFile(uf); }}
+                              title="Aperçu"
+                              data-testid={`button-preview-${idx}`}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={(e) => { e.stopPropagation(); removeFile(idx); }}
+                            title="Supprimer"
+                            data-testid={`button-remove-file-${idx}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
               <button
                 type="submit"
-                disabled={createMutation.isPending || !formData.title.trim()}
+                disabled={createMutation.isPending || !formData.title.trim() || !filesReady}
                 className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl text-sm font-semibold shadow-md shadow-primary/25 hover:shadow-lg transition-all disabled:opacity-50"
                 data-testid="button-submit-resource"
               >
                 <Send className="w-4 h-4" />
-                {createMutation.isPending ? "Envoi en cours..." : "Soumettre pour approbation"}
+                {createMutation.isPending ? "Envoi en cours..." : isUploading ? "Envoi des fichiers..." : hasPendingOrError ? "Fichiers non prêts" : "Soumettre pour approbation"}
               </button>
               <Link href="/resources">
                 <button
@@ -257,6 +535,70 @@ export default function SubmitResource() {
             </div>
           </div>
         </form>
+
+        {previewFile && (
+          <div
+            className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+            onClick={() => setPreviewFile(null)}
+            data-testid="modal-preview"
+          >
+            <Card
+              className="max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-2 p-4 border-b border-slate-100">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Eye className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span className="text-sm font-medium text-slate-700 truncate">{previewFile.file.name}</span>
+                  <Badge variant="outline" className="text-[10px] shrink-0 no-default-hover-elevate no-default-active-elevate">
+                    {formatFileSize(previewFile.file.size)}
+                  </Badge>
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setPreviewFile(null)}
+                  data-testid="button-close-preview"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-50">
+                {previewFile.previewUrl && previewFile.file.type.startsWith("image/") ? (
+                  <img
+                    src={previewFile.previewUrl}
+                    alt={previewFile.file.name}
+                    className="max-w-full max-h-[70vh] object-contain rounded"
+                    data-testid="preview-image"
+                  />
+                ) : previewFile.file.type === "application/pdf" && previewFile.objectPath ? (
+                  <iframe
+                    src={normalizeObjectPath(previewFile.objectPath)}
+                    className="w-full h-[70vh] rounded border border-slate-200"
+                    title={previewFile.file.name}
+                    data-testid="preview-pdf"
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <FileText className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                    <p className="text-sm text-slate-500">Aperçu non disponible pour ce format.</p>
+                    {previewFile.objectPath && (
+                      <a
+                        href={normalizeObjectPath(previewFile.objectPath)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary mt-2 inline-block"
+                        data-testid="link-open-file"
+                      >
+                        Ouvrir dans un nouvel onglet
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
       </main>
     </div>
   );

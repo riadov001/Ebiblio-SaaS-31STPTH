@@ -1,20 +1,84 @@
+import { useState } from "react";
 import { Resource, RESOURCE_TYPE_LABELS, DISCIPLINE_LABELS, SOURCE_LABELS } from "@shared/schema";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Book, FileText, GraduationCap, Database, Archive, BookOpen, ExternalLink, Trash2, Check, X } from "lucide-react";
+import { Book, FileText, GraduationCap, Database, Archive, BookOpen, ExternalLink, Trash2, Check, X, Paperclip, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useUpdateResource, useDeleteResource } from "@/hooks/use-resources";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface ResourceCardProps {
   resource: Resource;
   showActions?: boolean;
 }
 
+function getFileExtFromPath(path: string): string {
+  const parts = path.split('/');
+  const name = parts[parts.length - 1] || '';
+  const dot = name.lastIndexOf('.');
+  if (dot > 0) return name.substring(dot + 1).toUpperCase();
+  return "FILE";
+}
+
+function normalizeFileUrl(path: string): string {
+  return path.startsWith("/objects/") ? path : `/objects/${path}`;
+}
+
+function FilePreviewModal({ fileUrls, onClose }: { fileUrls: string[]; onClose: () => void }) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const url = normalizeFileUrl(fileUrls[activeIdx]);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose} data-testid="modal-resource-preview">
+      <Card className="max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between gap-2 p-4 border-b border-slate-100">
+          <div className="flex items-center gap-2 min-w-0 flex-1 overflow-x-auto">
+            {fileUrls.map((f, i) => (
+              <Button
+                key={i}
+                size="sm"
+                variant={i === activeIdx ? "default" : "outline"}
+                onClick={() => setActiveIdx(i)}
+                data-testid={`button-file-tab-${i}`}
+              >
+                <Paperclip className="w-3 h-3 mr-1" />
+                Fichier {i + 1}
+              </Button>
+            ))}
+          </div>
+          <Button size="icon" variant="ghost" onClick={onClose} data-testid="button-close-resource-preview">
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-50 min-h-[300px]">
+          {url && (url.endsWith('.pdf') || url.includes('application/pdf')) ? (
+            <iframe src={url} className="w-full h-[70vh] rounded border border-slate-200" title="Aperçu PDF" data-testid="preview-resource-pdf" />
+          ) : url && /\.(jpe?g|png|webp|gif)$/i.test(url) ? (
+            <img src={url} alt="Aperçu" className="max-w-full max-h-[70vh] object-contain rounded" data-testid="preview-resource-image" />
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+              <p className="text-sm text-slate-500 mb-2">Aperçu non disponible pour ce format.</p>
+              <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary font-medium" data-testid="link-download-file">
+                Télécharger le fichier
+              </a>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export function ResourceCard({ resource, showActions = false }: ResourceCardProps) {
   const { user } = useAuth();
   const updateMutation = useUpdateResource();
   const deleteMutation = useDeleteResource();
+  const [showPreview, setShowPreview] = useState(false);
+  const fileUrls = (resource as any).fileUrls as string[] | null;
   
   const userRole = (user as any)?.role || 'student';
   const isAdmin = userRole === 'director' || userRole === 'professor' || userRole === 'super_admin';
@@ -90,9 +154,16 @@ export function ResourceCard({ resource, showActions = false }: ResourceCardProp
         </span>
       )}
 
+      {fileUrls && fileUrls.length > 0 && (
+        <div className="flex items-center gap-1.5 mb-2">
+          <Paperclip className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-xs text-slate-500">{fileUrls.length} fichier{fileUrls.length > 1 ? 's' : ''} joint{fileUrls.length > 1 ? 's' : ''}</span>
+        </div>
+      )}
+
       <div className="mt-auto pt-3 border-t border-slate-50 flex flex-col gap-2">
-        {resource.url && (
-          <div className="flex gap-2 w-full">
+        <div className="flex gap-2 w-full flex-wrap">
+          {resource.url && (
             <a 
               href={resource.url} 
               target="_blank" 
@@ -102,8 +173,17 @@ export function ResourceCard({ resource, showActions = false }: ResourceCardProp
             >
               Consulter <ExternalLink className="w-3 h-3 ml-1.5" />
             </a>
-          </div>
-        )}
+          )}
+          {fileUrls && fileUrls.length > 0 && (
+            <button
+              onClick={() => setShowPreview(true)}
+              className="flex-1 bg-slate-100 text-slate-700 rounded-lg text-xs py-2 h-9 flex items-center justify-center font-medium hover:bg-slate-200 transition-colors"
+              data-testid={`button-preview-resource-${resource.id}`}
+            >
+              <Eye className="w-3 h-3 mr-1.5" /> Aperçu
+            </button>
+          )}
+        </div>
 
         {isAdmin && showActions && resource.status === 'pending' && (
           <div className="flex gap-2">
@@ -143,6 +223,10 @@ export function ResourceCard({ resource, showActions = false }: ResourceCardProp
           </button>
         )}
       </div>
+
+      {showPreview && fileUrls && fileUrls.length > 0 && (
+        <FilePreviewModal fileUrls={fileUrls} onClose={() => setShowPreview(false)} />
+      )}
     </div>
   );
 }

@@ -10,7 +10,7 @@ Key features:
 - **3-tier subscription system** — Free/Standard (39.99 EUR)/Premium (69.99 EUR) with feature gating, storage limits, premium support add-on (20 EUR/mo), extra storage (10 EUR/TB/mo)
 - **Feature gating** — Free: read-only + student accounts + 1TB; Standard: + professor/director accounts, external search, 3TB; Premium: all features, 6TB
 - **Resource catalog** with internal and advanced external search (OpenLibrary, DOAJ) — author, year range, language, discipline, sort, pagination
-- **Resource submission & approval workflow** (pending -> approved/rejected) with server-side role enforcement
+- **Resource submission & approval workflow** (pending -> approved/rejected) with server-side role enforcement, multi-file upload (2MB/file, 10MB total, PDF/DOC/DOCX/PPT/PPTX/XLS/XLSX/TXT/CSV/JPEG/PNG/WEBP), drag-and-drop, file preview
 - **Role-based access control** (student, professor, director, admin, super_admin) enforced on both frontend and backend
 - **Admin role** — between director and super_admin; can manage library info, CRUD users within their library
 - **User Profile page** — view/edit personal info (phone, address, discipline, bio), badge system (5 levels: newcomer/contributor/active/expert/champion), membership date, engagement progress
