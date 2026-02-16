@@ -1,6 +1,7 @@
 stages:
   - validate
   - build
+  - backup_db
   - deploy
 
 variables:
@@ -38,9 +39,31 @@ build:
     - if: $CI_MERGE_REQUEST_ID
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
+backup_database:
+  stage: backup_db
+  image: postgres:16-alpine
+  script:
+    - export TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    - export BACKUP_FILE="e-biblio_backup_${TIMESTAMP}.sql"
+    - echo "Sauvegarde de la base de donnees de dev..."
+    - pg_dump "$DEV_DATABASE_URL" --no-owner --no-privileges --clean --if-exists -f "$BACKUP_FILE"
+    - echo "Backup cree - $BACKUP_FILE"
+    - echo "Restauration vers la base de donnees de production..."
+    - psql "$PROD_DATABASE_URL" -f "$BACKUP_FILE"
+    - echo "Base de donnees de production mise a jour avec les donnees de dev."
+  artifacts:
+    paths:
+      - e-biblio_backup_*.sql
+    expire_in: 7 days
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
 deploy_to_replit:
   stage: deploy
   image: alpine:latest
+  needs:
+    - backup_database
+    - build
   before_script:
     - apk add --no-cache git openssh-client
     - mkdir -p ~/.ssh
