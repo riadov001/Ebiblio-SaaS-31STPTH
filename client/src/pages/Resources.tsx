@@ -38,13 +38,13 @@ export default function Resources() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8 overflow-x-hidden">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 mb-6">
-          <div className="text-center md:text-left">
-            <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900 leading-tight" data-testid="text-catalog-title">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-slate-900 leading-tight truncate" data-testid="text-catalog-title">
               Catalogue de la Bibliothèque
             </h1>
-            <p className="text-slate-500 mt-1 text-sm md:text-base">
+            <p className="text-slate-500 mt-1 text-xs sm:text-sm md:text-base truncate">
               Parcourez les ressources approuvées de toutes les collections
             </p>
           </div>

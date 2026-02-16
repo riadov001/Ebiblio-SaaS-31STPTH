@@ -84,12 +84,12 @@ export default function AcademicSources() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
-        <header className="mb-6 md:mb-8 text-center md:text-left">
-          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900 leading-tight" data-testid="text-sources-title">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8 overflow-x-hidden">
+        <header className="mb-6 md:mb-8">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-slate-900 leading-tight" data-testid="text-sources-title">
             Annuaire des Sources Académiques
           </h1>
-          <p className="text-sm md:text-base text-slate-500 mt-2">
+          <p className="text-xs sm:text-sm md:text-base text-slate-500 mt-2">
             Accédez directement à {sources.length} bases de données et plateformes de recherche en libre accès.
           </p>
         </header>
@@ -132,7 +132,7 @@ export default function AcademicSources() {
               href={source.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group bg-white rounded-xl border border-slate-100 p-5 flex flex-col gap-3 hover:shadow-lg hover:border-primary/20 transition-all duration-300"
+              className="group bg-white rounded-xl border border-slate-100 p-4 sm:p-5 flex flex-col gap-3 hover:shadow-lg hover:border-primary/20 transition-all duration-300 min-w-0"
               data-testid={`card-source-${source.name.toLowerCase().replace(/\s+/g, '-')}`}
             >
               <div className="flex items-start justify-between gap-3">
