@@ -299,12 +299,12 @@ function OverviewTab() {
       {disciplineChartData.length > 0 && (
         <Card className="p-6">
           <h3 className="font-display font-bold text-base mb-4">Ressources par Discipline</h3>
-          <div className="h-[280px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={disciplineChartData} layout="vertical" margin={{ left: 10 }}>
+          <div className="h-[280px] w-full overflow-x-auto">
+            <ResponsiveContainer width="100%" height="100%" minWidth={360}>
+              <BarChart data={disciplineChartData} layout="vertical" margin={{ left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <YAxis type="category" dataKey="name" width={120} axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" width={90} axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 10 }} />
                 <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                 <Bar dataKey="count" fill="#2563EB" radius={[0, 4, 4, 0]} barSize={16} name="Ressources" />
               </BarChart>

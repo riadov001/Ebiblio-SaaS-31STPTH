@@ -58,7 +58,7 @@ export function Sidebar() {
     <>
       <div className="p-5 pb-3">
         <div className="flex flex-col items-center gap-2">
-          <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-md overflow-hidden p-1" data-testid="img-sidebar-logo">
+          <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center shadow-md overflow-hidden p-1.5" data-testid="img-sidebar-logo">
             <img 
               src={upcLogoPath} 
               alt="UPC Logo" 

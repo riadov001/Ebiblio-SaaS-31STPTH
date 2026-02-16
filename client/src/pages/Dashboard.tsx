@@ -109,18 +109,18 @@ export default function Dashboard() {
           {disciplineChartData.length > 0 && (
             <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-100">
               <h2 className="text-base font-display font-bold mb-4 text-slate-900">Top Disciplines</h2>
-              <div className="h-[250px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={disciplineChartData} layout="vertical" margin={{ left: 10 }}>
+              <div className="h-[250px] w-full overflow-x-auto">
+                <ResponsiveContainer width="100%" height="100%" minWidth={320}>
+                  <BarChart data={disciplineChartData} layout="vertical" margin={{ left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                     <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                     <YAxis 
                       type="category" 
                       dataKey="name" 
-                      width={100} 
+                      width={80} 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: '#475569', fontSize: 11 }}
+                      tick={{ fill: '#475569', fontSize: 10 }}
                     />
                     <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                     <Bar dataKey="count" fill="#2563EB" radius={[0, 4, 4, 0]} barSize={18} name="Ressources" />
