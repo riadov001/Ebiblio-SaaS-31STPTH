@@ -150,7 +150,7 @@ export default function ExternalSearch() {
         </header>
 
         <div className="max-w-4xl mx-auto mb-6">
-          <form onSubmit={handleSearch} className="flex gap-2" data-testid="form-search">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2" data-testid="form-search">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
               <Input
@@ -161,25 +161,27 @@ export default function ExternalSearch() {
                 data-testid="input-search-query"
               />
             </div>
-            <Button type="submit" disabled={!query.trim()} data-testid="button-search">
-              <Search className="w-4 h-4 mr-2" />
-              Rechercher
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className={cn("relative", showFilters && "toggle-elevate toggle-elevated")}
-              data-testid="button-toggle-filters"
-            >
-              <SlidersHorizontal className="w-4 h-4 mr-2" />
-              Filtres
-              {activeFilterCount > 0 && (
-                <Badge variant="default" className="ml-1.5 px-1.5 py-0 text-[10px]">
-                  {activeFilterCount}
-                </Badge>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={!query.trim()} className="flex-1 sm:flex-none" data-testid="button-search">
+                <Search className="w-4 h-4 mr-2" />
+                Rechercher
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className={cn("relative flex-1 sm:flex-none", showFilters && "toggle-elevate toggle-elevated")}
+                data-testid="button-toggle-filters"
+              >
+                <SlidersHorizontal className="w-4 h-4 mr-2" />
+                Filtres
+                {activeFilterCount > 0 && (
+                  <Badge variant="default" className="ml-1.5 px-1.5 py-0 text-[10px]">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </div>
           </form>
 
           {showFilters && (
@@ -356,107 +358,111 @@ export default function ExternalSearch() {
                   filteredResults.map((item: any, idx: number) => (
                     <Card
                       key={`${item.externalId}-${idx}`}
-                      className="p-4 flex gap-4 hover-elevate"
+                      className="p-4 hover-elevate"
                       data-testid={`card-result-${idx}`}
                     >
-                      {item.coverUrl ? (
-                        <img
-                          src={item.coverUrl}
-                          alt={item.title}
-                          className="w-20 h-28 object-cover rounded-md shadow-sm bg-slate-100 shrink-0"
-                          data-testid={`img-cover-${idx}`}
-                        />
-                      ) : (
-                        <div className="w-20 h-28 bg-slate-100 rounded-md flex items-center justify-center shrink-0">
-                          {item.type === 'book' ? (
-                            <BookOpen className="w-8 h-8 text-slate-300" />
+                      <div className="flex gap-4">
+                        <div className="hidden sm:block">
+                          {item.coverUrl ? (
+                            <img
+                              src={item.coverUrl}
+                              alt={item.title}
+                              className="w-20 h-28 object-cover rounded-md shadow-sm bg-slate-100 shrink-0"
+                              data-testid={`img-cover-${idx}`}
+                            />
                           ) : (
-                            <FileText className="w-8 h-8 text-slate-300" />
+                            <div className="w-20 h-28 bg-slate-100 rounded-md flex items-center justify-center shrink-0">
+                              {item.type === 'book' ? (
+                                <BookOpen className="w-8 h-8 text-slate-300" />
+                              ) : (
+                                <FileText className="w-8 h-8 text-slate-300" />
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                          <Badge
-                            variant={item.source === 'openlibrary' ? 'secondary' : 'outline'}
-                            className="text-[10px]"
-                            data-testid={`badge-source-${idx}`}
-                          >
-                            {item.source === 'openlibrary' ? 'OpenLibrary' : 'DOAJ'}
-                          </Badge>
-                          <Badge variant="outline" className="text-[10px]">
-                            {item.type === 'book' ? 'Livre' : 'Article'}
-                          </Badge>
-                          {item.language && (
-                            <Badge variant="outline" className="text-[10px]">
-                              {item.language}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                            <Badge
+                              variant={item.source === 'openlibrary' ? 'secondary' : 'outline'}
+                              className="text-[10px]"
+                              data-testid={`badge-source-${idx}`}
+                            >
+                              {item.source === 'openlibrary' ? 'OpenLibrary' : 'DOAJ'}
                             </Badge>
+                            <Badge variant="outline" className="text-[10px]">
+                              {item.type === 'book' ? 'Livre' : 'Article'}
+                            </Badge>
+                            {item.language && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {item.language}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <h3 className="font-semibold text-sm sm:text-base text-slate-900 leading-snug mb-0.5 line-clamp-2" data-testid={`text-title-${idx}`}>
+                            {item.title}
+                          </h3>
+
+                          <p className="text-sm text-slate-600 mb-0.5" data-testid={`text-author-${idx}`}>
+                            {item.author}
+                            {item.year && <span className="text-slate-400"> ({item.year})</span>}
+                          </p>
+
+                          {item.journal && (
+                            <p className="text-xs text-slate-400 mb-0.5">
+                              {item.journal}
+                            </p>
+                          )}
+
+                          {item.publisher && (
+                            <p className="text-xs text-slate-400 mb-1">
+                              {item.publisher}
+                            </p>
+                          )}
+
+                          {item.abstract && (
+                            <p className="text-xs text-slate-500 line-clamp-2 mb-1.5 hidden sm:block" data-testid={`text-abstract-${idx}`}>
+                              {item.abstract}
+                            </p>
+                          )}
+
+                          {item.subject && item.subject.length > 0 && (
+                            <div className="flex flex-wrap gap-1 hidden sm:flex">
+                              {item.subject.slice(0, 4).map((s: string, si: number) => (
+                                <span key={si} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                                  {s.length > 30 ? s.substring(0, 30) + '...' : s}
+                                </span>
+                              ))}
+                            </div>
                           )}
                         </div>
 
-                        <h3 className="font-semibold text-base text-slate-900 leading-snug mb-0.5 line-clamp-2" data-testid={`text-title-${idx}`}>
-                          {item.title}
-                        </h3>
-
-                        <p className="text-sm text-slate-600 mb-0.5" data-testid={`text-author-${idx}`}>
-                          {item.author}
-                          {item.year && <span className="text-slate-400"> ({item.year})</span>}
-                        </p>
-
-                        {item.journal && (
-                          <p className="text-xs text-slate-400 mb-0.5">
-                            {item.journal}
-                          </p>
-                        )}
-
-                        {item.publisher && (
-                          <p className="text-xs text-slate-400 mb-1">
-                            {item.publisher}
-                          </p>
-                        )}
-
-                        {item.abstract && (
-                          <p className="text-xs text-slate-500 line-clamp-2 mb-1.5" data-testid={`text-abstract-${idx}`}>
-                            {item.abstract}
-                          </p>
-                        )}
-
-                        {item.subject && item.subject.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {item.subject.slice(0, 4).map((s: string, si: number) => (
-                              <span key={si} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
-                                {s.length > 30 ? s.substring(0, 30) + '...' : s}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-2 shrink-0">
-                        <Button
-                          size="icon"
-                          variant={savedItems.has(item.externalId) ? "default" : "outline"}
-                          onClick={() => handleSave(item)}
-                          disabled={createMutation.isPending || savedItems.has(item.externalId)}
-                          title={savedItems.has(item.externalId) ? "Déjà enregistré" : "Enregistrer dans la bibliothèque"}
-                          data-testid={`button-save-${idx}`}
-                        >
-                          {createMutation.isPending ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : savedItems.has(item.externalId) ? (
-                            <BookOpen className="w-4 h-4" />
-                          ) : (
-                            <Plus className="w-4 h-4" />
+                        <div className="flex flex-col gap-2 shrink-0">
+                          <Button
+                            size="icon"
+                            variant={savedItems.has(item.externalId) ? "default" : "outline"}
+                            onClick={() => handleSave(item)}
+                            disabled={createMutation.isPending || savedItems.has(item.externalId)}
+                            title={savedItems.has(item.externalId) ? "Déjà enregistré" : "Enregistrer dans la bibliothèque"}
+                            data-testid={`button-save-${idx}`}
+                          >
+                            {createMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : savedItems.has(item.externalId) ? (
+                              <BookOpen className="w-4 h-4" />
+                            ) : (
+                              <Plus className="w-4 h-4" />
+                            )}
+                          </Button>
+                          {item.url && (
+                            <a href={item.url} target="_blank" rel="noopener noreferrer">
+                              <Button size="icon" variant="ghost" title="Ouvrir la source" data-testid={`button-open-${idx}`}>
+                                <ExternalLink className="w-4 h-4" />
+                              </Button>
+                            </a>
                           )}
-                        </Button>
-                        {item.url && (
-                          <a href={item.url} target="_blank" rel="noopener noreferrer">
-                            <Button size="icon" variant="ghost" title="Ouvrir la source" data-testid={`button-open-${idx}`}>
-                              <ExternalLink className="w-4 h-4" />
-                            </Button>
-                          </a>
-                        )}
+                        </div>
                       </div>
                     </Card>
                   ))
@@ -472,8 +478,8 @@ export default function ExternalSearch() {
                     onClick={() => handlePageChange(currentPage - 1)}
                     data-testid="button-prev-page"
                   >
-                    <ChevronLeft className="w-4 h-4 mr-1" />
-                    Précédent
+                    <ChevronLeft className="w-4 h-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Précédent</span>
                   </Button>
 
                   <div className="flex items-center gap-1">
@@ -509,8 +515,8 @@ export default function ExternalSearch() {
                     onClick={() => handlePageChange(currentPage + 1)}
                     data-testid="button-next-page"
                   >
-                    Suivant
-                    <ChevronRight className="w-4 h-4 ml-1" />
+                    <span className="hidden sm:inline">Suivant</span>
+                    <ChevronRight className="w-4 h-4 sm:ml-1" />
                   </Button>
                 </div>
               )}
