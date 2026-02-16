@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROLE_LABELS } from "@shared/schema";
+import upcLogoPath from "@assets/logo_upc_noire.png";
 
 export function Sidebar() {
   const [location] = useLocation();
@@ -59,7 +60,7 @@ export function Sidebar() {
         <div className="flex flex-col items-center gap-2">
           <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-md overflow-hidden p-1" data-testid="img-sidebar-logo">
             <img 
-              src="/attached_assets/Logo-UPC_1770677221935.jpg" 
+              src={upcLogoPath} 
               alt="UPC Logo" 
               className="w-full h-full object-contain"
             />

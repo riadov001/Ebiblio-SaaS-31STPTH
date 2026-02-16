@@ -1,6 +1,6 @@
 import { BookOpen, Search, GraduationCap, ArrowRight, Globe, Users, Award, Lightbulb } from "lucide-react";
 import { motion } from "framer-motion";
-import upcLogoPath from "@assets/Logo-UPC_1770677221935.jpg";
+import upcLogoPath from "@assets/logo_upc_noire.png";
 
 export default function Landing() {
   return (
