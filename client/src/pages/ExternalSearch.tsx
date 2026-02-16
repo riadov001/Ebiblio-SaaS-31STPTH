@@ -161,7 +161,7 @@ export default function ExternalSearch() {
                 data-testid="input-search-query"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={!query.trim()} className="flex-1 sm:flex-none" data-testid="button-search">
                 <Search className="w-4 h-4 mr-2" />
                 Rechercher
@@ -361,17 +361,17 @@ export default function ExternalSearch() {
                       className="p-4 hover-elevate"
                       data-testid={`card-result-${idx}`}
                     >
-                      <div className="flex gap-4">
-                        <div className="hidden sm:block">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="hidden sm:block shrink-0">
                           {item.coverUrl ? (
                             <img
                               src={item.coverUrl}
                               alt={item.title}
-                              className="w-20 h-28 object-cover rounded-md shadow-sm bg-slate-100 shrink-0"
+                              className="w-20 h-28 object-cover rounded-md shadow-sm bg-slate-100"
                               data-testid={`img-cover-${idx}`}
                             />
                           ) : (
-                            <div className="w-20 h-28 bg-slate-100 rounded-md flex items-center justify-center shrink-0">
+                            <div className="w-20 h-28 bg-slate-100 rounded-md flex items-center justify-center">
                               {item.type === 'book' ? (
                                 <BookOpen className="w-8 h-8 text-slate-300" />
                               ) : (
@@ -428,7 +428,7 @@ export default function ExternalSearch() {
                           )}
 
                           {item.subject && item.subject.length > 0 && (
-                            <div className="flex flex-wrap gap-1 hidden sm:flex">
+                            <div className="hidden sm:flex flex-wrap gap-1">
                               {item.subject.slice(0, 4).map((s: string, si: number) => (
                                 <span key={si} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
                                   {s.length > 30 ? s.substring(0, 30) + '...' : s}
@@ -438,7 +438,7 @@ export default function ExternalSearch() {
                           )}
                         </div>
 
-                        <div className="flex flex-col gap-2 shrink-0">
+                        <div className="flex sm:flex-col gap-2 shrink-0">
                           <Button
                             size="icon"
                             variant={savedItems.has(item.externalId) ? "default" : "outline"}
