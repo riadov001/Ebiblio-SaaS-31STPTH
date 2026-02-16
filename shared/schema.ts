@@ -79,6 +79,7 @@ export const resources = pgTable("resources", {
   language: text("language").default("fr"),
   externalId: text("external_id"),
   url: text("url"),
+  downloadUrl: text("download_url"),
   description: text("description"),
   author: text("author"),
   publisher: text("publisher"),
