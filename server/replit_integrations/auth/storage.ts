@@ -17,6 +17,26 @@ class AuthStorage implements IAuthStorage {
     const superAdmins = ['sasmyjantes@gmail.com', 'bakengela.shamba@upc.ac.cd'];
     const role = superAdmins.includes(userData.email || '') ? 'super_admin' : (userData.role || 'student');
     const finalData = { ...userData, role, libraryId: userData.libraryId || 1 };
+
+    if (finalData.email) {
+      const [existingByEmail] = await db.select().from(users).where(eq(users.email, finalData.email));
+      if (existingByEmail && existingByEmail.id !== finalData.id) {
+        const [updated] = await db
+          .update(users)
+          .set({
+            id: finalData.id,
+            firstName: finalData.firstName,
+            lastName: finalData.lastName,
+            profileImageUrl: finalData.profileImageUrl,
+            role: finalData.role,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.email, finalData.email))
+          .returning();
+        return updated;
+      }
+    }
+
     const [user] = await db
       .insert(users)
       .values(finalData)

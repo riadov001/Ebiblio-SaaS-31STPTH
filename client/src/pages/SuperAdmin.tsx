@@ -15,7 +15,7 @@ import {
   Library as LibraryIcon, Globe, Download, Edit, Building2, Mail, Link as LinkIcon, Palette,
   CreditCard, HardDrive, Headphones, Star, Crown, Zap
 } from "lucide-react";
-import { RESOURCE_TYPE_LABELS, DISCIPLINE_LABELS, TIER_LABELS, TIER_PRICES, SUBSCRIPTION_TIERS } from "@shared/schema";
+import { RESOURCE_TYPE_LABELS, DISCIPLINE_LABELS, TIER_LABELS, TIER_PRICES, SUBSCRIPTION_TIERS, ROLE_LABELS } from "@shared/schema";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -169,7 +169,7 @@ function OverviewTab() {
       {globalStats?.libraryStats && globalStats.libraryStats.length > 0 && (
         <Card className="p-6">
           <h3 className="font-display font-bold text-base mb-4">Répartition par Bibliothèque</h3>
-          <div className="overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full" data-testid="table-library-stats">
               <thead>
                 <tr className="border-b border-slate-100">
@@ -214,6 +214,49 @@ function OverviewTab() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="md:hidden space-y-3">
+            {globalStats.libraryStats.map((lib: any) => (
+              <Card key={lib.id} className="p-4" data-testid={`card-library-stat-${lib.id}`}>
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-900 text-sm truncate">{lib.name}</p>
+                    <p className="text-xs text-slate-500 truncate">{lib.universityName}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`/api/admin/export/library/${lib.id}`, { credentials: 'include' });
+                        if (!res.ok) throw new Error("Export échoué");
+                        const blob = await res.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `ebiblio-export-${lib.name}-${Date.now()}.json`;
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                      } catch {}
+                    }}
+                    data-testid={`button-export-library-mobile-${lib.id}`}
+                  >
+                    <Download className="w-3.5 h-3.5 mr-1" />
+                    Export
+                  </Button>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-slate-900">{lib.users}</p>
+                    <p className="text-xs text-slate-500">Utilisateurs</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-slate-900">{lib.resources}</p>
+                    <p className="text-xs text-slate-500">Ressources</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         </Card>
       )}
@@ -811,121 +854,232 @@ function UsersTab() {
         )}
       </div>
 
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full" data-testid="table-users">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Utilisateur</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Bibliothèque</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rôle</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Points</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredUsers?.map((u: any) => (
-                <tr key={u.id} className="hover:bg-slate-50/50 transition-colors" data-testid={`row-user-${u.id}`}>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-                        {u.firstName?.[0] || u.email?.[0] || '?'}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-slate-900 text-sm truncate">{u.firstName} {u.lastName}</p>
-                        <p className="text-[10px] text-slate-400">ID: {u.id.slice(0, 8)}...</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{u.email || 'N/A'}</td>
-                  <td className="px-4 py-3">
-                    {libraries && (libraries as any[]).length > 1 ? (
-                      <select
-                        value={u.libraryId || 1}
-                        onChange={(e) => updateLibraryMutation.mutate({ userId: u.id, libraryId: Number(e.target.value) })}
-                        className="text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-                        data-testid={`select-library-${u.id}`}
-                      >
-                        {(libraries as any[]).map((lib: any) => (
-                          <option key={lib.id} value={lib.id}>{lib.name}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <Badge variant="secondary">{libraryMap[u.libraryId] || 'N/A'}</Badge>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <select
-                      data-testid={`select-role-${u.id}`}
-                      value={u.role}
-                      onChange={(e) => updateRoleMutation.mutate({ id: u.id, role: e.target.value })}
-                      className="text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-                    >
-                      <option value="student">Étudiant</option>
-                      <option value="professor">Professeur</option>
-                      <option value="director">Directeur</option>
-                      <option value="super_admin">Super Admin</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-3">
-                    {editingPoints === u.id ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          value={pointsValue}
-                          onChange={(e) => setPointsValue(e.target.value)}
-                          className="w-20 text-sm border border-slate-200 rounded-md px-2 py-1 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-                          data-testid={`input-points-${u.id}`}
-                        />
-                        <button
-                          onClick={() => handlePointsSave(u.id)}
-                          className="text-xs text-primary font-medium"
-                          data-testid={`button-save-points-${u.id}`}
-                        >
-                          OK
-                        </button>
-                        <button
-                          onClick={() => setEditingPoints(null)}
-                          className="text-xs text-slate-400"
-                        >
-                          X
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => { setEditingPoints(u.id); setPointsValue(String(u.points || 0)); }}
-                        className="text-sm font-medium text-slate-900 hover:text-primary transition-colors"
-                        data-testid={`button-edit-points-${u.id}`}
-                      >
-                        {u.points || 0} pts
-                      </button>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (confirm("Supprimer cet utilisateur ?")) {
-                          deleteUserMutation.mutate(u.id);
-                        }
-                      }}
-                      className="text-slate-400 hover:text-destructive"
-                      data-testid={`button-delete-user-${u.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </td>
+      <div className="hidden md:block">
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full" data-testid="table-users">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Utilisateur</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Bibliothèque</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rôle</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Points</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredUsers?.map((u: any) => (
+                  <tr key={u.id} className="hover:bg-slate-50/50 transition-colors" data-testid={`row-user-${u.id}`}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                          {u.firstName?.[0] || u.email?.[0] || '?'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900 text-sm truncate">{u.firstName} {u.lastName}</p>
+                          <p className="text-[10px] text-slate-400">ID: {u.id.slice(0, 8)}...</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{u.email || 'N/A'}</td>
+                    <td className="px-4 py-3">
+                      {libraries && (libraries as any[]).length > 1 ? (
+                        <select
+                          value={u.libraryId || 1}
+                          onChange={(e) => updateLibraryMutation.mutate({ userId: u.id, libraryId: Number(e.target.value) })}
+                          className="text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                          data-testid={`select-library-${u.id}`}
+                        >
+                          {(libraries as any[]).map((lib: any) => (
+                            <option key={lib.id} value={lib.id}>{lib.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Badge variant="secondary">{libraryMap[u.libraryId] || 'N/A'}</Badge>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <select
+                        data-testid={`select-role-${u.id}`}
+                        value={u.role}
+                        onChange={(e) => updateRoleMutation.mutate({ id: u.id, role: e.target.value })}
+                        className="text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                      >
+                        <option value="student">{ROLE_LABELS.student}</option>
+                        <option value="professor">{ROLE_LABELS.professor}</option>
+                        <option value="director">{ROLE_LABELS.director}</option>
+                        <option value="admin">{ROLE_LABELS.admin}</option>
+                        <option value="super_admin">{ROLE_LABELS.super_admin}</option>
+                      </select>
+                    </td>
+                    <td className="px-4 py-3">
+                      {editingPoints === u.id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            value={pointsValue}
+                            onChange={(e) => setPointsValue(e.target.value)}
+                            className="w-20 text-sm border border-slate-200 rounded-md px-2 py-1 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                            data-testid={`input-points-${u.id}`}
+                          />
+                          <button
+                            onClick={() => handlePointsSave(u.id)}
+                            className="text-xs text-primary font-medium"
+                            data-testid={`button-save-points-${u.id}`}
+                          >
+                            OK
+                          </button>
+                          <button
+                            onClick={() => setEditingPoints(null)}
+                            className="text-xs text-slate-400"
+                          >
+                            X
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setEditingPoints(u.id); setPointsValue(String(u.points || 0)); }}
+                          className="text-sm font-medium text-slate-900 hover:text-primary transition-colors"
+                          data-testid={`button-edit-points-${u.id}`}
+                        >
+                          {u.points || 0} pts
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (confirm("Supprimer cet utilisateur ?")) {
+                            deleteUserMutation.mutate(u.id);
+                          }
+                        }}
+                        className="text-slate-400 hover:text-destructive"
+                        data-testid={`button-delete-user-${u.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {(!filteredUsers || filteredUsers.length === 0) && (
+            <div className="text-center py-12 text-slate-400">Aucun utilisateur trouvé.</div>
+          )}
+        </Card>
+      </div>
+
+      <div className="md:hidden space-y-3">
+        {filteredUsers?.map((u: any) => (
+          <Card key={u.id} className="p-4" data-testid={`card-user-${u.id}`}>
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                  {u.firstName?.[0] || u.email?.[0] || '?'}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium text-slate-900 text-sm truncate">{u.firstName} {u.lastName}</p>
+                  <p className="text-xs text-slate-500 truncate">{u.email || 'N/A'}</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (confirm("Supprimer cet utilisateur ?")) {
+                    deleteUserMutation.mutate(u.id);
+                  }
+                }}
+                className="text-slate-400 hover:text-destructive shrink-0"
+                data-testid={`button-delete-user-mobile-${u.id}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {libraries && (libraries as any[]).length > 1 ? (
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Bibliothèque</label>
+                  <select
+                    value={u.libraryId || 1}
+                    onChange={(e) => updateLibraryMutation.mutate({ userId: u.id, libraryId: Number(e.target.value) })}
+                    className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                    data-testid={`select-library-mobile-${u.id}`}
+                  >
+                    {(libraries as any[]).map((lib: any) => (
+                      <option key={lib.id} value={lib.id}>{lib.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-500">Bibliothèque:</span>
+                  <Badge variant="secondary">{libraryMap[u.libraryId] || 'N/A'}</Badge>
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Rôle</label>
+                  <select
+                    data-testid={`select-role-mobile-${u.id}`}
+                    value={u.role}
+                    onChange={(e) => updateRoleMutation.mutate({ id: u.id, role: e.target.value })}
+                    className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                  >
+                    <option value="student">{ROLE_LABELS.student}</option>
+                    <option value="professor">{ROLE_LABELS.professor}</option>
+                    <option value="director">{ROLE_LABELS.director}</option>
+                    <option value="admin">{ROLE_LABELS.admin}</option>
+                    <option value="super_admin">{ROLE_LABELS.super_admin}</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Points</label>
+                  {editingPoints === u.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={pointsValue}
+                        onChange={(e) => setPointsValue(e.target.value)}
+                        className="w-full text-sm border border-slate-200 rounded-md px-2 py-1 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                        data-testid={`input-points-mobile-${u.id}`}
+                      />
+                      <button
+                        onClick={() => handlePointsSave(u.id)}
+                        className="text-xs text-primary font-medium"
+                        data-testid={`button-save-points-mobile-${u.id}`}
+                      >
+                        OK
+                      </button>
+                      <button
+                        onClick={() => setEditingPoints(null)}
+                        className="text-xs text-slate-400"
+                      >
+                        X
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setEditingPoints(u.id); setPointsValue(String(u.points || 0)); }}
+                      className="text-sm font-medium text-slate-900 hover:text-primary transition-colors"
+                      data-testid={`button-edit-points-mobile-${u.id}`}
+                    >
+                      {u.points || 0} pts
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
         {(!filteredUsers || filteredUsers.length === 0) && (
           <div className="text-center py-12 text-slate-400">Aucun utilisateur trouvé.</div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }
@@ -962,80 +1116,141 @@ function ResourcesTab() {
       {isLoading ? (
         <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-20 bg-white rounded-xl animate-pulse" />)}</div>
       ) : (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full" data-testid="table-resources">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Titre</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Source</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Statut</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {resources?.map((r: any) => (
-                  <tr key={r.id} className="hover:bg-slate-50/50 transition-colors" data-testid={`row-resource-${r.id}`}>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900 truncate max-w-xs text-sm">{r.title}</p>
-                      <p className="text-xs text-slate-400">{r.author || 'Auteur inconnu'}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="secondary">{RESOURCE_TYPE_LABELS[r.type] || r.type}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-600 capitalize">{r.source}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={r.status === 'approved' ? 'default' : r.status === 'pending' ? 'secondary' : 'destructive'}>
-                        {r.status === 'approved' ? 'Approuvée' : r.status === 'pending' ? 'En attente' : 'Rejetée'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        {r.status !== 'approved' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => updateMutation.mutate({ id: r.id, status: 'approved' })}
-                            className="text-green-600"
-                            data-testid={`button-approve-${r.id}`}
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {r.status !== 'rejected' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => updateMutation.mutate({ id: r.id, status: 'rejected' })}
-                            className="text-red-600"
-                            data-testid={`button-reject-${r.id}`}
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            if (confirm("Supprimer cette ressource ?")) deleteMutation.mutate(r.id);
-                          }}
-                          className="text-slate-400 hover:text-destructive"
-                          data-testid={`button-delete-resource-${r.id}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
+        <>
+        <div className="hidden md:block">
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full" data-testid="table-resources">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Titre</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Source</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Statut</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {resources?.map((r: any) => (
+                    <tr key={r.id} className="hover:bg-slate-50/50 transition-colors" data-testid={`row-resource-${r.id}`}>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-slate-900 truncate max-w-xs text-sm">{r.title}</p>
+                        <p className="text-xs text-slate-400">{r.author || 'Auteur inconnu'}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant="secondary">{RESOURCE_TYPE_LABELS[r.type] || r.type}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-600 capitalize">{r.source}</td>
+                      <td className="px-4 py-3">
+                        <Badge variant={r.status === 'approved' ? 'default' : r.status === 'pending' ? 'secondary' : 'destructive'}>
+                          {r.status === 'approved' ? 'Approuvée' : r.status === 'pending' ? 'En attente' : 'Rejetée'}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          {r.status !== 'approved' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => updateMutation.mutate({ id: r.id, status: 'approved' })}
+                              className="text-green-600"
+                              data-testid={`button-approve-${r.id}`}
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {r.status !== 'rejected' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => updateMutation.mutate({ id: r.id, status: 'rejected' })}
+                              className="text-red-600"
+                              data-testid={`button-reject-${r.id}`}
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm("Supprimer cette ressource ?")) deleteMutation.mutate(r.id);
+                            }}
+                            className="text-slate-400 hover:text-destructive"
+                            data-testid={`button-delete-resource-${r.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {(!resources || resources.length === 0) && (
+              <div className="text-center py-12 text-slate-400">Aucune ressource trouvée.</div>
+            )}
+          </Card>
+        </div>
+
+        <div className="md:hidden space-y-3">
+          {resources?.map((r: any) => (
+            <Card key={r.id} className="p-4" data-testid={`card-resource-${r.id}`}>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-slate-900 text-sm truncate">{r.title}</p>
+                  <p className="text-xs text-slate-400">{r.author || 'Auteur inconnu'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <Badge variant="secondary">{RESOURCE_TYPE_LABELS[r.type] || r.type}</Badge>
+                <Badge variant={r.status === 'approved' ? 'default' : r.status === 'pending' ? 'secondary' : 'destructive'}>
+                  {r.status === 'approved' ? 'Approuvée' : r.status === 'pending' ? 'En attente' : 'Rejetée'}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-1 pt-3 border-t border-slate-100">
+                {r.status !== 'approved' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => updateMutation.mutate({ id: r.id, status: 'approved' })}
+                    className="text-green-600"
+                    data-testid={`button-approve-mobile-${r.id}`}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                  </Button>
+                )}
+                {r.status !== 'rejected' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => updateMutation.mutate({ id: r.id, status: 'rejected' })}
+                    className="text-red-600"
+                    data-testid={`button-reject-mobile-${r.id}`}
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    if (confirm("Supprimer cette ressource ?")) deleteMutation.mutate(r.id);
+                  }}
+                  className="text-slate-400 hover:text-destructive"
+                  data-testid={`button-delete-resource-mobile-${r.id}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </Card>
+          ))}
           {(!resources || resources.length === 0) && (
             <div className="text-center py-12 text-slate-400">Aucune ressource trouvée.</div>
           )}
-        </Card>
+        </div>
+        </>
       )}
     </div>
   );
