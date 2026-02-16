@@ -128,17 +128,48 @@ export async function registerRoutes(
   app.get(api.external.search.path, async (req, res) => {
     const q = req.query.q as string;
     const source = req.query.source as string || 'all';
+    const author = req.query.author as string || '';
+    const yearFrom = req.query.yearFrom ? Number(req.query.yearFrom) : undefined;
+    const yearTo = req.query.yearTo ? Number(req.query.yearTo) : undefined;
+    const language = req.query.language as string || '';
+    const subject = req.query.subject as string || '';
+    const sort = req.query.sort as string || 'relevance';
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(5, Number(req.query.limit) || 20));
     
-    if (!q) return res.json([]);
+    if (!q) return res.json({ results: [], totalResults: 0, page: 1, totalPages: 0 });
 
-    const results: any[] = [];
+    const allResults: any[] = [];
+    let olTotal = 0;
+    let doajTotal = 0;
 
     try {
+      const perSourceLimit = source === 'all' ? Math.ceil(limit / 2) : limit;
+      const perSourceOffset = source === 'all' ? Math.ceil((page - 1) * limit / 2) : (page - 1) * limit;
+
       if (source === 'all' || source === 'openlibrary') {
-        const olRes = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=10`);
+        const olParams = new URLSearchParams();
+        let olQuery = q;
+        if (author) olQuery += ` author:${author}`;
+        if (subject) olQuery += ` subject:${subject}`;
+        olParams.set('q', olQuery);
+        olParams.set('limit', String(source === 'all' ? perSourceLimit : limit));
+        olParams.set('offset', String(source === 'all' ? perSourceOffset : (page - 1) * limit));
+        if (language) olParams.set('language', language);
+        if (yearFrom || yearTo) {
+          const from = yearFrom || 1800;
+          const to = yearTo || new Date().getFullYear();
+          olParams.set('first_publish_year', `[${from} TO ${to}]`);
+        }
+        if (sort === 'newest') olParams.set('sort', 'new');
+        else if (sort === 'oldest') olParams.set('sort', 'old');
+        else if (sort === 'title') olParams.set('sort', 'title');
+
+        const olRes = await fetch(`https://openlibrary.org/search.json?${olParams.toString()}`);
         if (olRes.ok) {
           const data = await olRes.json();
-          const books = (data.docs || []).slice(0, 10).map((doc: any) => ({
+          olTotal = data.numFound || 0;
+          const books = (data.docs || []).map((doc: any) => ({
             externalId: doc.key,
             title: doc.title,
             author: doc.author_name?.[0] || 'Inconnu',
@@ -146,16 +177,35 @@ export async function registerRoutes(
             source: 'openlibrary',
             type: 'book',
             url: `https://openlibrary.org${doc.key}`,
-            coverUrl: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : undefined
+            coverUrl: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : undefined,
+            language: doc.language?.[0],
+            subject: doc.subject?.slice(0, 5),
+            publisher: doc.publisher?.[0],
+            isbn: doc.isbn?.[0],
           }));
-          results.push(...books);
+          allResults.push(...books);
         }
       }
 
       if (source === 'all' || source === 'doaj') {
-        const doajRes = await fetch(`https://doaj.org/api/search/articles/${encodeURIComponent(q)}?pageSize=10`);
+        let doajQuery = q;
+        if (author) doajQuery += ` AND bibjson.author.name:${author}`;
+        if (subject) doajQuery += ` AND bibjson.subject.term:${subject}`;
+        if (yearFrom && yearTo) doajQuery += ` AND bibjson.year:[${yearFrom} TO ${yearTo}]`;
+        else if (yearFrom) doajQuery += ` AND bibjson.year:[${yearFrom} TO *]`;
+        else if (yearTo) doajQuery += ` AND bibjson.year:[* TO ${yearTo}]`;
+
+        const doajParams = new URLSearchParams();
+        doajParams.set('pageSize', String(source === 'all' ? perSourceLimit : limit));
+        doajParams.set('page', String(page));
+        if (sort === 'newest') doajParams.set('sort', 'created_date:desc');
+        else if (sort === 'oldest') doajParams.set('sort', 'created_date:asc');
+        else if (sort === 'title') doajParams.set('sort', 'bibjson.title:asc');
+
+        const doajRes = await fetch(`https://doaj.org/api/search/articles/${encodeURIComponent(doajQuery)}?${doajParams.toString()}`);
         if (doajRes.ok) {
           const data = await doajRes.json();
+          doajTotal = data.total || 0;
           const articles = (data.results || []).map((item: any) => ({
             externalId: item.id,
             title: item.bibjson.title,
@@ -164,16 +214,30 @@ export async function registerRoutes(
             source: 'doaj',
             type: 'article',
             url: item.bibjson.link?.[0]?.url,
-            coverUrl: undefined
+            coverUrl: undefined,
+            language: item.bibjson.journal?.language?.[0],
+            subject: item.bibjson.subject?.map((s: any) => s.term).slice(0, 5),
+            journal: item.bibjson.journal?.title,
+            abstract: item.bibjson.abstract?.substring(0, 300),
+            publisher: item.bibjson.journal?.publisher,
+            isbn: item.bibjson.journal?.issns?.[0],
           }));
-          results.push(...articles);
+          allResults.push(...articles);
         }
       }
     } catch (e) {
       console.error("External search error:", e);
     }
 
-    res.json(results);
+    if (sort === 'newest') allResults.sort((a, b) => (b.year || 0) - (a.year || 0));
+    else if (sort === 'oldest') allResults.sort((a, b) => (a.year || 0) - (b.year || 0));
+    else if (sort === 'title') allResults.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+
+    const totalResults = source === 'all' ? olTotal + doajTotal : (source === 'openlibrary' ? olTotal : doajTotal);
+    const trimmedResults = allResults.slice(0, limit);
+    const totalPages = Math.ceil(totalResults / limit);
+
+    res.json({ results: trimmedResults, totalResults, page, totalPages });
   });
 
   // === Suggestions API ===

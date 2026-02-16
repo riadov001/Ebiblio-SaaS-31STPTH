@@ -7,7 +7,7 @@ E-Biblio is a **multi-tenant SaaS** digital library management platform. Origina
 Key features:
 - **Multi-tenant architecture** — `libraries` table as tenant model, all data scoped by libraryId
 - **Super Admin library management** — Create, edit, delete, toggle libraries with global stats & data export
-- **Resource catalog** with internal and external search (OpenLibrary, DOAJ)
+- **Resource catalog** with internal and advanced external search (OpenLibrary, DOAJ) — author, year range, language, discipline, sort, pagination
 - **Resource submission & approval workflow** (pending -> approved/rejected) with server-side role enforcement
 - **Role-based access control** (student, professor, director, super_admin) enforced on both frontend and backend
 - **Points & rewards system** for student engagement (+50 pts approved resource, +10 pts suggestion)

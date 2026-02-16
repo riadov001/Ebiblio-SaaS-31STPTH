@@ -109,17 +109,40 @@ export function useDeleteResource() {
   });
 }
 
-export function useExternalSearch(query: string, source: 'openlibrary' | 'doaj' | 'all' = 'all') {
+export interface ExternalSearchFilters {
+  q: string;
+  source: 'openlibrary' | 'doaj' | 'all';
+  author?: string;
+  yearFrom?: number;
+  yearTo?: number;
+  language?: string;
+  subject?: string;
+  sort?: 'relevance' | 'newest' | 'oldest' | 'title';
+  page?: number;
+  limit?: number;
+}
+
+export function useExternalSearch(filters: ExternalSearchFilters) {
   return useQuery({
-    queryKey: [api.external.search.path, query, source],
+    queryKey: [api.external.search.path, filters],
     queryFn: async () => {
-      if (!query) return [];
-      const url = `${api.external.search.path}?q=${encodeURIComponent(query)}&source=${source}`;
-      const res = await fetch(url, { credentials: "include" });
+      if (!filters.q) return { results: [], totalResults: 0, page: 1, totalPages: 0 };
+      const params = new URLSearchParams();
+      params.set('q', filters.q);
+      params.set('source', filters.source);
+      if (filters.author) params.set('author', filters.author);
+      if (filters.yearFrom) params.set('yearFrom', String(filters.yearFrom));
+      if (filters.yearTo) params.set('yearTo', String(filters.yearTo));
+      if (filters.language) params.set('language', filters.language);
+      if (filters.subject) params.set('subject', filters.subject);
+      if (filters.sort) params.set('sort', filters.sort);
+      if (filters.page) params.set('page', String(filters.page));
+      if (filters.limit) params.set('limit', String(filters.limit));
+      const res = await fetch(`${api.external.search.path}?${params.toString()}`, { credentials: "include" });
       if (!res.ok) throw new Error("Échec de la recherche externe");
       return res.json();
     },
-    enabled: !!query && query.length > 2,
+    enabled: !!filters.q && filters.q.length > 2,
     staleTime: 1000 * 60 * 5,
   });
 }
