@@ -3,7 +3,7 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { api } from "@shared/routes";
-import { users } from "@shared/schema";
+import { users, libraries, TIER_STORAGE_LIMITS_TB } from "@shared/schema";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
@@ -80,6 +80,14 @@ export async function registerRoutes(
     try {
       const input = api.resources.create.input.parse(req.body);
       const user = await getUserFromReq(req);
+      if (user && user.role === 'student' && user.libraryId) {
+        const lib = await storage.getLibrary(user.libraryId);
+        if (lib && lib.subscriptionTier !== 'premium') {
+          return res.status(403).json({ 
+            message: "La soumission de ressources par les étudiants nécessite un abonnement Premium." 
+          });
+        }
+      }
       const resource = await storage.createResource({
         ...input,
         submittedBy: req.user.claims.sub,
@@ -123,9 +131,16 @@ export async function registerRoutes(
     }
   });
 
-  // === External Search API ===
+  // === External Search API (gated: Standard/Premium only) ===
 
   app.get(api.external.search.path, async (req, res) => {
+    const user = await getUserFromReq(req);
+    if (user && user.libraryId) {
+      const lib = await storage.getLibrary(user.libraryId);
+      if (lib && lib.subscriptionTier === 'free') {
+        return res.status(403).json({ message: "La recherche externe nécessite un abonnement Standard ou Premium." });
+      }
+    }
     const q = req.query.q as string;
     const source = req.query.source as string || 'all';
     const author = req.query.author as string || '';
@@ -336,6 +351,17 @@ export async function registerRoutes(
   app.patch(api.admin.users.updateRole.path, requireSuperAdmin, async (req, res) => {
     try {
       const input = api.admin.users.updateRole.input.parse(req.body);
+      if (input.role === 'professor' || input.role === 'director') {
+        const targetUser = await storage.getUser(req.params.id);
+        if (targetUser && targetUser.libraryId) {
+          const lib = await storage.getLibrary(targetUser.libraryId);
+          if (lib && lib.subscriptionTier === 'free') {
+            return res.status(403).json({ 
+              message: "Le niveau Gratuit ne permet pas la création de comptes Professeur ou Directeur. Passez au Standard ou Premium." 
+            });
+          }
+        }
+      }
       const updated = await storage.updateUserRole(req.params.id, input.role);
       res.json(updated);
     } catch (e: any) {
@@ -457,6 +483,117 @@ export async function registerRoutes(
         .where(eq(users.id, userId))
         .returning();
       if (!updated) return res.status(404).json({ message: "User not found" });
+      res.json(updated);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  // === Subscription Management (Super Admin) ===
+
+  app.patch('/api/admin/libraries/:id/subscription', requireSuperAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const { subscriptionTier, premiumSupport, extraStorageTb } = req.body;
+      const updates: any = { updatedAt: new Date() };
+      if (subscriptionTier) {
+        updates.subscriptionTier = subscriptionTier;
+        updates.storageLimitTb = (TIER_STORAGE_LIMITS_TB[subscriptionTier as string] || 1) + (extraStorageTb || 0);
+      }
+      if (premiumSupport !== undefined) updates.premiumSupport = premiumSupport ? 1 : 0;
+      if (extraStorageTb !== undefined) {
+        updates.extraStorageTb = extraStorageTb;
+        const lib = await storage.getLibrary(id);
+        if (lib) {
+          const baseTb = TIER_STORAGE_LIMITS_TB[(subscriptionTier || lib.subscriptionTier) as string] || 1;
+          updates.storageLimitTb = baseTb + extraStorageTb;
+        }
+      }
+      const updated = await storage.updateLibrary(id, updates);
+      res.json(updated);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.get('/api/library/:id/subscription', requireAuth, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const lib = await storage.getLibrary(id);
+      if (!lib) return res.status(404).json({ message: "Library not found" });
+      res.json({
+        tier: lib.subscriptionTier,
+        status: lib.subscriptionStatus,
+        premiumSupport: lib.premiumSupport === 1,
+        storageLimitTb: lib.storageLimitTb,
+        storageUsedBytes: lib.storageUsedBytes,
+        extraStorageTb: lib.extraStorageTb,
+      });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  // === Feature Gating Endpoint ===
+
+  app.get('/api/library/:id/features', async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const lib = await storage.getLibrary(id);
+      if (!lib) return res.status(404).json({ message: "Library not found" });
+      const tier = lib.subscriptionTier || 'free';
+      res.json({
+        tier,
+        canCreateProfessor: tier !== 'free',
+        canCreateDirector: tier !== 'free',
+        canAccessExternalSearch: tier !== 'free',
+        canSubmitResources: tier === 'premium',
+        canApproveResources: tier !== 'free',
+        canManageRewards: tier === 'premium',
+        canManageSuggestions: tier === 'premium',
+        canUploadFiles: true,
+        canAccessSources: true,
+        canReadResources: true,
+        storageLimitTb: lib.storageLimitTb,
+        premiumSupport: lib.premiumSupport === 1,
+      });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  // === Logo Upload for Library ===
+
+  app.patch('/api/admin/libraries/:id/logo', requireSuperAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const { logoUrl } = req.body;
+      const updated = await storage.updateLibrary(id, { logoUrl, updatedAt: new Date() } as any);
+      res.json(updated);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  // === Role Creation with Tier Check ===
+
+  app.post('/api/admin/users/:id/role-with-tier-check', requireSuperAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const { role } = req.body;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      if (role === 'professor' || role === 'director') {
+        const lib = user.libraryId ? await storage.getLibrary(user.libraryId) : null;
+        if (lib && lib.subscriptionTier === 'free') {
+          return res.status(403).json({ 
+            message: "Le niveau d'abonnement Gratuit ne permet pas la création de comptes Professeur ou Directeur. Passez au niveau Standard ou Premium." 
+          });
+        }
+      }
+
+      const updated = await storage.updateUserRole(userId, role);
       res.json(updated);
     } catch (e: any) {
       res.status(400).json({ message: e.message });

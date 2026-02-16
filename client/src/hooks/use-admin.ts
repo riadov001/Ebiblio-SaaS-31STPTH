@@ -202,3 +202,55 @@ export function useDeleteUser() {
     },
   });
 }
+
+export function useUpdateSubscription() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: number; subscriptionTier?: string; premiumSupport?: boolean; extraStorageTb?: number }) => {
+      const res = await apiRequest("PATCH", `/api/admin/libraries/${id}/subscription`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/libraries'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/global-stats'] });
+      toast({ title: "Abonnement mis à jour", description: "Le niveau d'abonnement a été modifié." });
+    },
+    onError: (error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useLibraryFeatures(libraryId: number | undefined) {
+  return useQuery({
+    queryKey: ['/api/library', libraryId, 'features'],
+    queryFn: async () => {
+      if (!libraryId) return null;
+      const res = await fetch(`/api/library/${libraryId}/features`, { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!libraryId,
+  });
+}
+
+export function useUpdateLibraryLogo() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, logoUrl }: { id: number; logoUrl: string }) => {
+      const res = await apiRequest("PATCH", `/api/admin/libraries/${id}/logo`, { logoUrl });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/libraries'] });
+      toast({ title: "Logo mis à jour", description: "Le logo de la bibliothèque a été modifié." });
+    },
+    onError: (error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+}

@@ -7,6 +7,8 @@ E-Biblio is a **multi-tenant SaaS** digital library management platform. Origina
 Key features:
 - **Multi-tenant architecture** — `libraries` table as tenant model, all data scoped by libraryId
 - **Super Admin library management** — Create, edit, delete, toggle libraries with global stats & data export
+- **3-tier subscription system** — Free/Standard (39.99 EUR)/Premium (69.99 EUR) with feature gating, storage limits, premium support add-on (20 EUR/mo), extra storage (10 EUR/TB/mo)
+- **Feature gating** — Free: read-only + student accounts + 1TB; Standard: + professor/director accounts, external search, 3TB; Premium: all features, 6TB
 - **Resource catalog** with internal and advanced external search (OpenLibrary, DOAJ) — author, year range, language, discipline, sort, pagination
 - **Resource submission & approval workflow** (pending -> approved/rejected) with server-side role enforcement
 - **Role-based access control** (student, professor, director, super_admin) enforced on both frontend and backend

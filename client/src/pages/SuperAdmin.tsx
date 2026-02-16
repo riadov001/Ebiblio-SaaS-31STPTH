@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { 
   useAdminUsers, useAdminStats, useUpdateUserRole, useUpdateUserPoints, useDeleteUser,
-  useGlobalStats, useLibraries, useCreateLibrary, useUpdateLibrary, useDeleteLibrary, useUpdateUserLibrary
+  useGlobalStats, useLibraries, useCreateLibrary, useUpdateLibrary, useDeleteLibrary, useUpdateUserLibrary,
+  useUpdateSubscription
 } from "@/hooks/use-admin";
 import { useResources, useDeleteResource, useUpdateResource } from "@/hooks/use-resources";
 import { useRewards, useCreateReward } from "@/hooks/use-rewards";
@@ -11,9 +12,10 @@ import {
   Users, Shield, BookOpen, Award, Trash2, 
   ChevronDown, BarChart3, TrendingUp, 
   CheckCircle, XCircle, Clock, Plus, Lightbulb,
-  Library as LibraryIcon, Globe, Download, Edit, Building2, Mail, Link as LinkIcon, Palette
+  Library as LibraryIcon, Globe, Download, Edit, Building2, Mail, Link as LinkIcon, Palette,
+  CreditCard, HardDrive, Headphones, Star, Crown, Zap
 } from "lucide-react";
-import { RESOURCE_TYPE_LABELS, DISCIPLINE_LABELS } from "@shared/schema";
+import { RESOURCE_TYPE_LABELS, DISCIPLINE_LABELS, TIER_LABELS, TIER_PRICES, SUBSCRIPTION_TIERS } from "@shared/schema";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +23,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-type Tab = 'overview' | 'libraries' | 'users' | 'resources' | 'rewards';
+type Tab = 'overview' | 'libraries' | 'users' | 'resources' | 'rewards' | 'subscriptions';
 
 export default function SuperAdmin() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -30,6 +32,7 @@ export default function SuperAdmin() {
   const tabs = [
     { id: 'overview' as Tab, label: 'Vue d\'ensemble', icon: BarChart3 },
     { id: 'libraries' as Tab, label: 'Bibliothèques', icon: LibraryIcon },
+    { id: 'subscriptions' as Tab, label: 'Abonnements', icon: CreditCard },
     { id: 'users' as Tab, label: 'Utilisateurs', icon: Users },
     { id: 'resources' as Tab, label: 'Ressources', icon: BookOpen },
     { id: 'rewards' as Tab, label: 'Récompenses', icon: Award },
@@ -70,6 +73,7 @@ export default function SuperAdmin() {
 
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'libraries' && <LibrariesTab />}
+        {activeTab === 'subscriptions' && <SubscriptionsTab />}
         {activeTab === 'users' && <UsersTab />}
         {activeTab === 'resources' && <ResourcesTab />}
         {activeTab === 'rewards' && <RewardsTab />}
@@ -456,9 +460,14 @@ function LibrariesTab() {
                   <p className="text-xs text-slate-500 truncate">{lib.universityName}</p>
                 </div>
               </div>
-              <Badge variant={lib.isActive ? "default" : "secondary"} className="shrink-0">
-                {lib.isActive ? 'Actif' : 'Inactif'}
-              </Badge>
+              <div className="flex items-center gap-1 shrink-0 flex-wrap">
+                <Badge className={cn(TIER_COLOR[lib.subscriptionTier || 'free'], 'text-xs')}>
+                  {TIER_LABELS[lib.subscriptionTier || 'free']}
+                </Badge>
+                <Badge variant={lib.isActive ? "default" : "secondary"} className="text-xs">
+                  {lib.isActive ? 'Actif' : 'Inactif'}
+                </Badge>
+              </div>
             </div>
 
             {lib.description && (
@@ -525,6 +534,233 @@ function LibrariesTab() {
       {(!libraries || (libraries as any[]).length === 0) && (
         <div className="text-center py-12 text-slate-400">Aucune bibliothèque trouvée.</div>
       )}
+    </div>
+  );
+}
+
+const TIER_ICON: Record<string, any> = { free: Star, standard: Zap, premium: Crown };
+const TIER_COLOR: Record<string, string> = { free: 'bg-slate-100 text-slate-700', standard: 'bg-blue-100 text-blue-700', premium: 'bg-amber-100 text-amber-700' };
+
+const TIER_FEATURES: Record<string, string[]> = {
+  free: [
+    'Consultation des ressources',
+    'Comptes étudiants uniquement',
+    '1 To de stockage',
+    'Sources académiques',
+  ],
+  standard: [
+    'Tout du plan Gratuit',
+    'Comptes professeurs / directeurs',
+    'Recherche externe (OpenLibrary, DOAJ)',
+    'Approbation de ressources',
+    '3 To de stockage',
+  ],
+  premium: [
+    'Tout du plan Standard',
+    'Soumission de ressources par étudiants',
+    'Système de récompenses complet',
+    'Gestion des suggestions',
+    '6 To de stockage',
+    'Toutes les fonctionnalités',
+  ],
+};
+
+function SubscriptionsTab() {
+  const { data: allLibraries, isLoading } = useLibraries();
+  const updateSubscription = useUpdateSubscription();
+  const [managingLib, setManagingLib] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  if (isLoading) {
+    return <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-40 bg-white rounded-xl animate-pulse" />)}</div>;
+  }
+
+  const libs = (allLibraries as any[]) || [];
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+          <h2 className="text-lg font-display font-bold text-slate-900">Gestion des Abonnements</h2>
+          <p className="text-sm text-slate-500 mt-1">Gérez les niveaux d'abonnement de chaque bibliothèque.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {SUBSCRIPTION_TIERS.map((tier) => {
+          const TierIcon = TIER_ICON[tier];
+          return (
+            <Card key={tier} className={cn("p-5", tier === 'premium' ? 'ring-2 ring-amber-400' : '')} data-testid={`card-tier-${tier}`}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className={cn("w-10 h-10 rounded-md flex items-center justify-center", TIER_COLOR[tier])}>
+                  <TierIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-slate-900">{TIER_LABELS[tier]}</h3>
+                  <p className="text-sm text-slate-500">
+                    {TIER_PRICES[tier] === 0 ? 'Gratuit' : `${TIER_PRICES[tier].toFixed(2)} \u20AC/mois`}
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-1.5">
+                {TIER_FEATURES[tier].map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-slate-600">
+                    <CheckCircle className="w-3.5 h-3.5 text-green-500 mt-0.5 shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          );
+        })}
+      </div>
+
+      <div className="mb-4">
+        <h3 className="font-display font-bold text-slate-900 mb-1">Options supplémentaires</h3>
+        <div className="flex flex-wrap gap-4">
+          <Card className="p-4 flex items-center gap-3">
+            <Headphones className="w-5 h-5 text-blue-600" />
+            <div>
+              <p className="text-sm font-semibold text-slate-700">Support Premium</p>
+              <p className="text-xs text-slate-500">20,00 \u20AC/mois</p>
+            </div>
+          </Card>
+          <Card className="p-4 flex items-center gap-3">
+            <HardDrive className="w-5 h-5 text-blue-600" />
+            <div>
+              <p className="text-sm font-semibold text-slate-700">Stockage additionnel</p>
+              <p className="text-xs text-slate-500">10,00 \u20AC/To par mois</p>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <h3 className="font-display font-bold text-slate-900 mt-8 mb-4">Bibliothèques &amp; leurs abonnements</h3>
+
+      <div className="space-y-3">
+        {libs.map((lib: any) => {
+          const tier = lib.subscriptionTier || 'free';
+          const TierIcon = TIER_ICON[tier] || Star;
+          const isManaging = managingLib === lib.id;
+
+          return (
+            <Card key={lib.id} className="p-4" data-testid={`card-subscription-${lib.id}`}>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div 
+                    className="w-9 h-9 rounded-md flex items-center justify-center text-white font-bold text-xs shrink-0"
+                    style={{ backgroundColor: lib.primaryColor || '#052c65' }}
+                  >
+                    {lib.name?.[0] || 'B'}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-sm text-slate-900 truncate">{lib.name}</h4>
+                    <p className="text-xs text-slate-500 truncate">{lib.universityName}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge className={cn(TIER_COLOR[tier])} data-testid={`badge-tier-${lib.id}`}>
+                    <TierIcon className="w-3 h-3 mr-1" />
+                    {TIER_LABELS[tier]}
+                  </Badge>
+                  {lib.premiumSupport === 1 && (
+                    <Badge variant="outline" className="text-blue-600 border-blue-200">
+                      <Headphones className="w-3 h-3 mr-1" />
+                      Support Premium
+                    </Badge>
+                  )}
+                  {(lib.extraStorageTb || 0) > 0 && (
+                    <Badge variant="outline" className="text-slate-600">
+                      <HardDrive className="w-3 h-3 mr-1" />
+                      +{lib.extraStorageTb} To
+                    </Badge>
+                  )}
+                  <div className="text-xs text-slate-400 ml-2">
+                    Stockage: {lib.storageLimitTb || 1} To
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setManagingLib(isManaging ? null : lib.id)} data-testid={`button-manage-sub-${lib.id}`}>
+                    <CreditCard className="w-3.5 h-3.5 mr-1" />
+                    {isManaging ? 'Fermer' : 'Gérer'}
+                  </Button>
+                </div>
+              </div>
+
+              {isManaging && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Niveau d'abonnement</label>
+                      <select
+                        className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                        defaultValue={tier}
+                        data-testid={`select-tier-${lib.id}`}
+                        onChange={(e) => {
+                          updateSubscription.mutate({ id: lib.id, subscriptionTier: e.target.value });
+                        }}
+                      >
+                        {SUBSCRIPTION_TIERS.map(t => (
+                          <option key={t} value={t}>
+                            {TIER_LABELS[t]} {TIER_PRICES[t] > 0 ? `(${TIER_PRICES[t].toFixed(2)} \u20AC/mois)` : '(Gratuit)'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Stockage additionnel (To)</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          defaultValue={lib.extraStorageTb || 0}
+                          className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                          data-testid={`input-extra-storage-${lib.id}`}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value) || 0;
+                            if (val !== (lib.extraStorageTb || 0)) {
+                              updateSubscription.mutate({ id: lib.id, extraStorageTb: val });
+                            }
+                          }}
+                        />
+                        <span className="text-xs text-slate-400 whitespace-nowrap">x 10 \u20AC/mois</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Support Premium</label>
+                      <Button
+                        variant={lib.premiumSupport === 1 ? "default" : "outline"}
+                        size="sm"
+                        className="w-full"
+                        data-testid={`button-premium-support-${lib.id}`}
+                        onClick={() => {
+                          updateSubscription.mutate({ id: lib.id, premiumSupport: lib.premiumSupport !== 1 });
+                        }}
+                      >
+                        <Headphones className="w-3.5 h-3.5 mr-1" />
+                        {lib.premiumSupport === 1 ? 'Actif (20 \u20AC/mois)' : 'Activer (20 \u20AC/mois)'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 p-3 bg-slate-50 rounded-md">
+                    <p className="text-xs font-medium text-slate-600 mb-1">Coût mensuel estimé :</p>
+                    <p className="text-lg font-bold text-slate-900" data-testid={`text-monthly-cost-${lib.id}`}>
+                      {(
+                        TIER_PRICES[tier] +
+                        (lib.premiumSupport === 1 ? 20 : 0) +
+                        ((lib.extraStorageTb || 0) * 10)
+                      ).toFixed(2)} \u20AC/mois
+                    </p>
+                  </div>
+                </div>
+              )}
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }
