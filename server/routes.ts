@@ -32,8 +32,17 @@ const requireSuperAdmin = async (req: any, res: Response, next: NextFunction) =>
 const requireAdminRole = async (req: any, res: Response, next: NextFunction) => {
   if (!req.user) return res.status(401).json({ message: "Unauthorized" });
   const user = await getUserFromReq(req);
-  if (!user || !['professor', 'director', 'super_admin'].includes(user.role)) {
+  if (!user || !['professor', 'director', 'admin', 'super_admin'].includes(user.role)) {
     return res.status(403).json({ message: "Forbidden: insufficient permissions" });
+  }
+  next();
+};
+
+const requireLibraryAdmin = async (req: any, res: Response, next: NextFunction) => {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+  const user = await getUserFromReq(req);
+  if (!user || !['admin', 'super_admin'].includes(user.role)) {
+    return res.status(403).json({ message: "Forbidden: Admin access required" });
   }
   next();
 };
@@ -379,12 +388,139 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.admin.users.delete.path, requireSuperAdmin, async (req, res) => {
+  app.delete(api.admin.users.delete.path, requireLibraryAdmin, async (req: any, res) => {
     try {
+      const admin = await getUserFromReq(req);
+      const targetUser = await storage.getUser(req.params.id);
+      if (!targetUser) return res.status(404).json({ message: "User not found" });
+      if (admin?.role !== 'super_admin' && targetUser.libraryId !== admin?.libraryId) {
+        return res.status(403).json({ message: "Vous ne pouvez supprimer que les utilisateurs de votre bibliothèque." });
+      }
+      if (targetUser.role === 'super_admin' && admin?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Seul un Super Admin peut supprimer un Super Admin." });
+      }
       await storage.deleteUser(req.params.id);
       res.status(204).end();
     } catch (e: any) {
       res.status(404).json({ message: e.message });
+    }
+  });
+
+  // === User Profile Update (self or admin) ===
+
+  app.get('/api/users/:id', requireAuth, async (req: any, res) => {
+    try {
+      const currentUser = await getUserFromReq(req);
+      const targetId = req.params.id;
+      const isSelf = currentUser?.id === targetId;
+      const isSuperAdmin = currentUser?.role === 'super_admin';
+      const isLibraryAdmin = currentUser && ['admin', 'super_admin'].includes(currentUser.role);
+
+      const targetUser = await storage.getUser(targetId);
+      if (!targetUser) return res.status(404).json({ message: "User not found" });
+
+      if (!isSelf && !isSuperAdmin) {
+        if (!isLibraryAdmin || targetUser.libraryId !== currentUser?.libraryId) {
+          return res.status(403).json({ message: "Accès non autorisé." });
+        }
+      }
+      res.json(targetUser);
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.patch('/api/users/:id/profile', requireAuth, async (req: any, res) => {
+    try {
+      const currentUser = await getUserFromReq(req);
+      const targetId = req.params.id;
+      const isSelf = currentUser?.id === targetId;
+      const isSuperAdmin = currentUser?.role === 'super_admin';
+      const isLibraryAdmin = currentUser && ['admin', 'super_admin'].includes(currentUser.role);
+
+      if (!isSelf && !isLibraryAdmin) {
+        return res.status(403).json({ message: "Vous ne pouvez modifier que votre propre profil." });
+      }
+
+      if (isLibraryAdmin && !isSelf && !isSuperAdmin) {
+        const targetUser = await storage.getUser(targetId);
+        if (!targetUser || targetUser.libraryId !== currentUser?.libraryId) {
+          return res.status(403).json({ message: "Vous ne pouvez modifier que les utilisateurs de votre bibliothèque." });
+        }
+      }
+
+      const { firstName, lastName, phone, address, discipline, bio, profileImageUrl, email } = req.body;
+      const updates: any = {};
+      if (firstName !== undefined && typeof firstName === 'string') updates.firstName = firstName.trim();
+      if (lastName !== undefined && typeof lastName === 'string') updates.lastName = lastName.trim();
+      if (phone !== undefined && typeof phone === 'string') updates.phone = phone.trim() || null;
+      if (address !== undefined && typeof address === 'string') updates.address = address.trim() || null;
+      if (discipline !== undefined && typeof discipline === 'string') updates.discipline = discipline || null;
+      if (bio !== undefined && typeof bio === 'string') updates.bio = bio.trim() || null;
+      if (profileImageUrl !== undefined && typeof profileImageUrl === 'string') updates.profileImageUrl = profileImageUrl || null;
+      if (email !== undefined && typeof email === 'string' && isLibraryAdmin) updates.email = email.trim();
+      const updated = await storage.updateUserProfile(targetId, updates);
+      res.json(updated);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  // === Admin Create User ===
+
+  const ALLOWED_CREATE_ROLES = ['student', 'professor', 'director', 'admin'];
+
+  app.post('/api/admin/users', requireLibraryAdmin, async (req: any, res) => {
+    try {
+      const admin = await getUserFromReq(req);
+      const { email, firstName, lastName, role, phone, address, discipline, bio } = req.body;
+      if (!email || !firstName || !lastName || typeof email !== 'string' || typeof firstName !== 'string' || typeof lastName !== 'string') {
+        return res.status(400).json({ message: "Email, prénom et nom sont obligatoires." });
+      }
+      const assignedRole = role && ALLOWED_CREATE_ROLES.includes(role) ? role : 'student';
+      if (admin?.role === 'admin' && assignedRole === 'admin') {
+        return res.status(403).json({ message: "Un admin ne peut pas créer un autre admin. Seul un Super Admin peut le faire." });
+      }
+      const userId = `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const created = await storage.createUser({
+        id: userId,
+        email: email.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        role: assignedRole,
+        phone: (typeof phone === 'string' && phone.trim()) || null,
+        address: (typeof address === 'string' && address.trim()) || null,
+        discipline: (typeof discipline === 'string' && discipline) || null,
+        bio: (typeof bio === 'string' && bio.trim()) || null,
+        libraryId: admin?.libraryId || 1,
+        points: 0,
+      });
+      res.status(201).json(created);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  // === Admin Edit Library Info (admin + super_admin) ===
+
+  app.patch('/api/admin/my-library', requireLibraryAdmin, async (req: any, res) => {
+    try {
+      const admin = await getUserFromReq(req);
+      if (!admin?.libraryId) return res.status(400).json({ message: "Aucune bibliothèque assignée." });
+      const { name, universityName, description, contactEmail, website, primaryColor, secondaryColor, logoUrl } = req.body;
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (universityName !== undefined) updates.universityName = universityName;
+      if (description !== undefined) updates.description = description;
+      if (contactEmail !== undefined) updates.contactEmail = contactEmail;
+      if (website !== undefined) updates.website = website;
+      if (primaryColor !== undefined) updates.primaryColor = primaryColor;
+      if (secondaryColor !== undefined) updates.secondaryColor = secondaryColor;
+      if (logoUrl !== undefined) updates.logoUrl = logoUrl;
+      const updated = await storage.updateLibrary(admin.libraryId, updates);
+      res.json(updated);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
     }
   });
 

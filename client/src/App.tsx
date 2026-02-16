@@ -18,8 +18,10 @@ import AcademicSources from "@/pages/AcademicSources";
 import Suggestions from "@/pages/Suggestions";
 import SubmitResource from "@/pages/SubmitResource";
 import Documentation from "@/pages/Documentation";
+import UserProfile from "@/pages/UserProfile";
+import LibraryAdmin from "@/pages/LibraryAdmin";
 
-function ProtectedRoute({ component: Component, adminOnly = false, superAdminOnly = false }: { component: React.ComponentType, adminOnly?: boolean, superAdminOnly?: boolean }) {
+function ProtectedRoute({ component: Component, adminOnly = false, superAdminOnly = false, libraryAdminOnly = false }: { component: React.ComponentType, adminOnly?: boolean, superAdminOnly?: boolean, libraryAdminOnly?: boolean }) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -40,7 +42,11 @@ function ProtectedRoute({ component: Component, adminOnly = false, superAdminOnl
     return <Redirect to="/dashboard" />;
   }
 
-  if (adminOnly && userRole !== 'director' && userRole !== 'professor' && userRole !== 'super_admin') {
+  if (libraryAdminOnly && userRole !== 'admin' && userRole !== 'super_admin') {
+    return <Redirect to="/dashboard" />;
+  }
+
+  if (adminOnly && !['professor', 'director', 'admin', 'super_admin'].includes(userRole)) {
     return <Redirect to="/dashboard" />;
   }
 
@@ -87,8 +93,14 @@ function Router() {
       <Route path="/suggestions">
         <ProtectedRoute component={Suggestions} />
       </Route>
+      <Route path="/profile">
+        <ProtectedRoute component={UserProfile} />
+      </Route>
       <Route path="/approvals">
         <ProtectedRoute component={AdminApprovals} adminOnly={true} />
+      </Route>
+      <Route path="/library-admin">
+        <ProtectedRoute component={LibraryAdmin} libraryAdminOnly={true} />
       </Route>
       <Route path="/admin">
         <ProtectedRoute component={SuperAdmin} superAdminOnly={true} />

@@ -54,6 +54,25 @@ export const libraries = pgTable("libraries", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const ROLES = ['student', 'professor', 'director', 'admin', 'super_admin'] as const;
+export type UserRole = typeof ROLES[number];
+
+export const ROLE_LABELS: Record<string, string> = {
+  student: 'Étudiant',
+  professor: 'Professeur',
+  director: 'Directeur',
+  admin: 'Administrateur',
+  super_admin: 'Super Admin',
+};
+
+export const ROLE_HIERARCHY: Record<string, number> = {
+  student: 0,
+  professor: 1,
+  director: 2,
+  admin: 3,
+  super_admin: 4,
+};
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
@@ -63,6 +82,11 @@ export const users = pgTable("users", {
   role: text("role").default("student").notNull(),
   points: integer("points").default(0).notNull(),
   libraryId: integer("library_id").references(() => libraries.id),
+  phone: varchar("phone"),
+  address: text("address"),
+  discipline: text("discipline"),
+  bio: text("bio"),
+  badgeLevel: text("badge_level").default("newcomer"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

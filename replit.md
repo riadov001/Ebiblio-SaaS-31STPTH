@@ -11,7 +11,10 @@ Key features:
 - **Feature gating** — Free: read-only + student accounts + 1TB; Standard: + professor/director accounts, external search, 3TB; Premium: all features, 6TB
 - **Resource catalog** with internal and advanced external search (OpenLibrary, DOAJ) — author, year range, language, discipline, sort, pagination
 - **Resource submission & approval workflow** (pending -> approved/rejected) with server-side role enforcement
-- **Role-based access control** (student, professor, director, super_admin) enforced on both frontend and backend
+- **Role-based access control** (student, professor, director, admin, super_admin) enforced on both frontend and backend
+- **Admin role** — between director and super_admin; can manage library info, CRUD users within their library
+- **User Profile page** — view/edit personal info (phone, address, discipline, bio), badge system (5 levels: newcomer/contributor/active/expert/champion), membership date, engagement progress
+- **Library Admin page** — two tabs: library info management + user CRUD with extended profiles (admin/super_admin only)
 - **Points & rewards system** for student engagement (+50 pts approved resource, +10 pts suggestion)
 - **Admin dashboard** with user management, statistics, and full CRUD on resources/rewards
 - **Academic Sources Directory** — 40+ curated open access databases in 9 categories with search/filter

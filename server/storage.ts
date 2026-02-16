@@ -31,6 +31,8 @@ export interface IStorage {
   updateUserPoints(id: string, points: number): Promise<User>;
   deleteUser(id: string): Promise<void>;
   addPoints(userId: string, points: number): Promise<User>;
+  updateUserProfile(id: string, updates: Partial<{ firstName: string; lastName: string; phone: string; address: string; discipline: string; bio: string; profileImageUrl: string; email: string }>): Promise<User>;
+  createUser(data: any): Promise<User>;
 
   getLibraries(): Promise<Library[]>;
   getLibrary(id: number): Promise<Library | undefined>;
@@ -229,6 +231,23 @@ export class DatabaseStorage implements IStorage {
       .returning();
       
     return updated;
+  }
+
+  async updateUserProfile(id: string, updates: Partial<{ firstName: string; lastName: string; phone: string; address: string; discipline: string; bio: string; profileImageUrl: string; email: string }>): Promise<User> {
+    const [updated] = await db.update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    if (!updated) throw new Error("User not found");
+    return updated;
+  }
+
+  async createUser(data: any): Promise<User> {
+    const [created] = await db.insert(users).values({
+      ...data,
+      updatedAt: new Date(),
+    }).returning();
+    return created;
   }
 
   async getLibraries(): Promise<Library[]> {

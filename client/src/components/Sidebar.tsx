@@ -15,9 +15,12 @@ import {
   Globe,
   Lightbulb,
   Upload,
-  HelpCircle
+  HelpCircle,
+  Settings,
+  UserCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ROLE_LABELS } from "@shared/schema";
 
 export function Sidebar() {
   const [location] = useLocation();
@@ -28,6 +31,7 @@ export function Sidebar() {
 
   const navItems = [
     { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+    { href: "/profile", label: "Mon Profil", icon: UserCircle },
     { href: "/resources", label: "Catalogue", icon: Library },
     { href: "/submit", label: "Soumettre", icon: Upload },
     { href: "/search", label: "Recherche externe", icon: Search },
@@ -37,20 +41,17 @@ export function Sidebar() {
     { href: "/documentation", label: "Guide & Aide", icon: HelpCircle },
   ];
 
-  if (userRole === 'director' || userRole === 'professor' || userRole === 'super_admin') {
+  if (userRole === 'director' || userRole === 'professor' || userRole === 'admin' || userRole === 'super_admin') {
     navItems.push({ href: "/approvals", label: "Approbations", icon: CheckSquare });
+  }
+
+  if (userRole === 'admin' || userRole === 'super_admin') {
+    navItems.push({ href: "/library-admin", label: "Gestion", icon: Settings });
   }
 
   if (userRole === 'super_admin') {
     navItems.push({ href: "/admin", label: "Super Admin", icon: Shield });
   }
-
-  const roleLabels: Record<string, string> = {
-    student: "Étudiant",
-    professor: "Professeur",
-    director: "Directeur",
-    super_admin: "Super Admin",
-  };
 
   const sidebarContent = (
     <>
@@ -100,7 +101,7 @@ export function Sidebar() {
             <p className="text-sm font-semibold truncate text-white">
               {user?.firstName} {user?.lastName}
             </p>
-            <p className="text-xs text-white/60">{roleLabels[userRole] || userRole}</p>
+            <p className="text-xs text-white/60">{ROLE_LABELS[userRole] || userRole}</p>
           </div>
         </div>
         
