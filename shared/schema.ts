@@ -85,6 +85,7 @@ export const resources = pgTable("resources", {
   publisher: text("publisher"),
   isbn: text("isbn"),
   publicationYear: integer("publication_year"),
+  fileUrls: text("file_urls").array(),
   status: text("status").default("pending").notNull(),
   submittedBy: varchar("submitted_by").references(() => users.id),
   libraryId: integer("library_id").references(() => libraries.id),
