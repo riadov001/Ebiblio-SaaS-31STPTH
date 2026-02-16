@@ -55,18 +55,18 @@ export function Sidebar() {
 
   const sidebarContent = (
     <>
-      <div className="p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm overflow-hidden p-0.5">
+      <div className="p-5 pb-3">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-md overflow-hidden p-1" data-testid="img-sidebar-logo">
             <img 
               src="/attached_assets/Logo-UPC_1770677221935.jpg" 
               alt="UPC Logo" 
               className="w-full h-full object-contain"
             />
           </div>
-          <div className="flex flex-col">
-            <h1 className="text-xl font-bold tracking-tight text-white leading-none">E-Biblio</h1>
-            <span className="text-[10px] text-white/70 uppercase tracking-widest mt-1">UPC</span>
+          <div className="flex flex-col items-center">
+            <h1 className="text-lg font-bold tracking-tight text-white leading-none">E-Biblio</h1>
+            <span className="text-[10px] text-white/60 uppercase tracking-widest mt-0.5">Université Protestante au Congo</span>
           </div>
         </div>
       </div>

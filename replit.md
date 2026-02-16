@@ -75,7 +75,8 @@ Preferred communication style: Simple, everyday language.
 - **student** — Browse catalog, search externally, submit resources, earn/redeem points
 - **professor** — All student abilities + approve/reject pending resources
 - **director** — Same as professor
-- **super_admin** — Full control: manage users, roles, points, resources, rewards
+- **admin** — All director abilities + manage library info + CRUD users within their library (library-scoped)
+- **super_admin** — Full control: manage users, roles, points, resources, rewards, libraries, subscriptions (global scope)
 
 ### Build Process
 - Client: Vite builds to `dist/public`
