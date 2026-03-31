@@ -868,7 +868,7 @@ export default function Documentation() {
                 </div>
                 <ul className="space-y-1.5 text-xs text-slate-600">
                   <li><strong>PostgreSQL</strong> — base de donnees relationnelle</li>
-                  <li><strong>Replit Auth</strong> — authentification OAuth/OIDC</li>
+                  <li><strong>Auth locale</strong> — email + mot de passe (bcryptjs)</li>
                   <li><strong>Google Cloud Storage</strong> — stockage fichiers</li>
                   <li><strong>Replit Object Storage</strong> — integration stockage</li>
                   <li><strong>Neon DB</strong> — PostgreSQL cloud</li>
@@ -1084,10 +1084,10 @@ export default function Documentation() {
                 group: "Authentification",
                 color: "bg-slate-100 text-slate-700",
                 endpoints: [
-                  { method: "GET", path: "/api/auth/user", auth: "Public", desc: "Retourne l'utilisateur courant (null si non connecte)" },
-                  { method: "GET", path: "/api/login", auth: "Public", desc: "Redirige vers Replit OIDC pour connexion" },
-                  { method: "GET", path: "/api/logout", auth: "Auth", desc: "Deconnecte l'utilisateur et detruit la session" },
-                  { method: "GET", path: "/api/callback", auth: "Public", desc: "Callback OAuth apres connexion Replit" },
+                  { method: "GET", path: "/api/auth/user", auth: "Auth", desc: "Retourne le profil de l'utilisateur connecte (401 si non connecte)" },
+                  { method: "POST", path: "/api/auth/login", auth: "Public", desc: "Connexion avec email + mot de passe. Body: { email, password }" },
+                  { method: "POST", path: "/api/auth/register", auth: "Public", desc: "Creation de compte. Body: { email, password, firstName, lastName }" },
+                  { method: "POST", path: "/api/auth/logout", auth: "Auth", desc: "Deconnexion — detruit la session serveur" },
                 ]
               },
               {
@@ -1196,22 +1196,22 @@ export default function Documentation() {
                 <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
                   <ArrowRight className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-slate-800">Replit Auth (OIDC)</strong>
-                    <p className="text-xs mt-0.5">Authentification deleguee a Replit via OpenID Connect. Aucun mot de passe stocke en base. Les tokens sont verifies via Passport.js.</p>
+                    <strong className="text-slate-800">Authentification locale (email + mot de passe)</strong>
+                    <p className="text-xs mt-0.5">Les mots de passe sont haches avec <code>bcryptjs</code> (10 rounds) avant stockage. Aucun mot de passe en clair n'est jamais persiste. Inscription via <code>POST /api/auth/register</code>, connexion via <code>POST /api/auth/login</code>.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
                   <ArrowRight className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                   <div>
                     <strong className="text-slate-800">Sessions PostgreSQL</strong>
-                    <p className="text-xs mt-0.5">Les sessions sont stockees dans la table <code>sessions</code> (PostgreSQL). Securisees avec un secret d'environnement, HTTPOnly et SameSite.</p>
+                    <p className="text-xs mt-0.5">Les sessions sont stockees dans la table <code>sessions</code> (PostgreSQL) via <code>connect-pg-simple</code>. La session stocke uniquement l'ID utilisateur. Cookie HTTPOnly, secure en production, expiration 7 jours.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
                   <ArrowRight className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                   <div>
                     <strong className="text-slate-800">Middleware d'autorisation</strong>
-                    <p className="text-xs mt-0.5">Chaque route protegee utilise un middleware : <code>requireAuth</code>, <code>requireAdminRole</code>, <code>requireLibraryAdmin</code>, ou <code>requireSuperAdmin</code>.</p>
+                    <p className="text-xs mt-0.5">A chaque requete, un middleware charge l'utilisateur depuis la session et l'attache a <code>req.user</code>. Chaque route protegee utilise : <code>requireAuth</code>, <code>requireAdminRole</code>, <code>requireLibraryAdmin</code>, ou <code>requireSuperAdmin</code>.</p>
                   </div>
                 </div>
               </div>

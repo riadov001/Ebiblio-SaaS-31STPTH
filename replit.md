@@ -23,12 +23,13 @@ Key features:
 - **Object Storage** — File uploads via Replit Object Storage with presigned URL flow
 - **Data export/backup** — Per-library and global JSON export for super admins
 - **User library assignment** — Super admins can transfer users between libraries
-- **Replit Auth** integration via OpenID Connect for authentication
+- **Local Auth** — email + password authentication (bcryptjs + PostgreSQL sessions)
 
 ## Recent Fixes & Changes
 
 - **Bug fix**: Database tables were missing on fresh deployments. Fixed by running `npm run db:push` to create all tables.
 - **Bug fix**: `seedDatabase()` and `createTestAccounts()` referenced `libraryId: 1` (hardcoded) before any library existed in the database, causing a foreign key violation on startup. Fixed by adding `ensureDefaultLibrary()` which creates the default library first if none exist, then uses its real ID.
+- **Auth migration**: Replaced Replit Auth (OIDC) with local email + password authentication. Added `password` (hashed with bcryptjs) column to `users` table. New endpoints: `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/logout`. Session-based auth stored in PostgreSQL. Landing page now shows inline login/register form.
 - **Documentation**: Added 4 new technical sections to `/documentation`: Architecture Technique, Modele de Donnees, Reference API REST, Securite & Abonnements.
 
 ## User Preferences
