@@ -120,21 +120,36 @@ export function Sidebar() {
 
   return (
     <>
-      <button 
-        onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-[100] md:hidden bg-primary border border-white/20 rounded-lg p-2 shadow-lg"
-        data-testid="button-mobile-menu"
-      >
-        <Menu className="w-5 h-5 text-white" />
-      </button>
+      {/* Mobile top bar */}
+      <header className="fixed top-0 left-0 right-0 h-14 z-[100] md:hidden bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-4">
+        <button 
+          onClick={() => setMobileOpen(true)}
+          className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          aria-label="Ouvrir le menu"
+          data-testid="button-mobile-menu"
+        >
+          <Menu className="w-5 h-5 text-slate-700" />
+        </button>
 
+        <div className="flex items-center gap-2">
+          <img src={upcLogoPath} alt="UPC" className="h-7 w-7 object-contain" />
+          <span className="font-display font-bold text-slate-900 text-base">E-Biblio</span>
+        </div>
+
+        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">
+          {user?.firstName?.[0] || 'U'}
+        </div>
+      </header>
+
+      {/* Mobile drawer overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[90] md:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-64 bg-primary border-r border-slate-200 flex flex-col text-white shadow-xl">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 w-72 bg-primary border-r border-slate-200 flex flex-col text-white shadow-2xl">
             <button 
               onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 p-1 text-white/50 hover:text-white z-10"
+              className="absolute top-4 right-4 p-1.5 text-white/50 hover:text-white hover:bg-white/10 rounded-lg z-10 transition-colors"
+              aria-label="Fermer le menu"
             >
               <X className="w-5 h-5" />
             </button>
@@ -143,6 +158,7 @@ export function Sidebar() {
         </div>
       )}
 
+      {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-primary border-r border-slate-200 hidden md:flex flex-col text-white shadow-xl">
         {sidebarContent}
       </aside>

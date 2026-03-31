@@ -10,7 +10,7 @@ export default function AdminApprovals() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-14 md:pt-8">
         <header className="mb-6 md:mb-8 text-center md:text-left">
           <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900 leading-tight">Approbations en Attente</h1>
           <p className="text-slate-500 mt-1 text-sm md:text-base">Examinez les nouvelles soumissions de ressources.</p>

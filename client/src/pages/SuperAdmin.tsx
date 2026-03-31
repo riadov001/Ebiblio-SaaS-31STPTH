@@ -41,7 +41,7 @@ export default function SuperAdmin() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8 overflow-x-hidden">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-14 md:pt-8 overflow-x-hidden">
         <header className="mb-6 md:mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Shield className="w-7 h-7 md:w-8 md:h-8 text-primary shrink-0" />

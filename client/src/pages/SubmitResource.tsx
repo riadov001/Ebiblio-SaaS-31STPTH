@@ -216,7 +216,7 @@ export default function SubmitResource() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-14 md:pt-8">
         <header className="mb-6 md:mb-8">
           <Link href="/resources">
             <button className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary mb-4 transition-colors" data-testid="button-back">

@@ -1309,7 +1309,7 @@ export default function Documentation() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-14 md:pt-8">
         <header className="mb-6 md:mb-8 text-center md:text-left">
           <div className="flex flex-col md:flex-row items-center gap-3 mb-2 justify-center md:justify-start">
             <BookOpen className="w-8 h-8 text-primary" />

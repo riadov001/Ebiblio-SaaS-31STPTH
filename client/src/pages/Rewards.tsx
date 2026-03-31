@@ -14,7 +14,7 @@ export default function Rewards() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-14 md:pt-8">
         <header className="mb-6 md:mb-8 bg-gradient-to-r from-primary to-accent p-6 md:p-8 rounded-2xl md:rounded-3xl text-white shadow-lg shadow-primary/20">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="text-center md:text-left w-full md:w-auto">
