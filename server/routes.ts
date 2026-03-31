@@ -10,9 +10,7 @@ import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 async function getUserFromReq(req: any) {
-  if (!req.user) return null;
-  const userId = req.user.claims.sub;
-  return await storage.getUser(userId);
+  return req.user || null;
 }
 
 const requireAuth = async (req: any, res: Response, next: NextFunction) => {
@@ -99,7 +97,7 @@ export async function registerRoutes(
       }
       const resource = await storage.createResource({
         ...input,
-        submittedBy: req.user.claims.sub,
+        submittedBy: req.user.id,
         status: "pending",
         libraryId: user?.libraryId || 1,
       });
@@ -277,7 +275,7 @@ export async function registerRoutes(
   });
 
   app.get(api.suggestions.mySuggestions.path, requireAuth, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user.id;
     const list = await storage.getUserSuggestions(userId);
     res.json(list);
   });
@@ -288,12 +286,12 @@ export async function registerRoutes(
       const user = await getUserFromReq(req);
       const suggestion = await storage.createSuggestion({
         ...input,
-        submittedBy: req.user.claims.sub,
+        submittedBy: req.user.id,
         status: "pending",
         libraryId: user?.libraryId || 1,
       });
 
-      await storage.addPoints(req.user.claims.sub, 10);
+      await storage.addPoints(req.user.id, 10);
 
       res.status(201).json(suggestion);
     } catch (err) {
@@ -338,7 +336,7 @@ export async function registerRoutes(
 
   app.post(api.rewards.redeem.path, requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const rewardId = Number(req.params.id);
       
       const redemption = await storage.redeemReward(userId, rewardId);

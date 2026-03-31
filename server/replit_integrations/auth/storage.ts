@@ -4,8 +4,12 @@ import { eq } from "drizzle-orm";
 
 export interface IAuthStorage {
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  createLocalUser(data: { email: string; password: string; firstName: string; lastName: string }): Promise<User>;
 }
+
+const SUPER_ADMIN_EMAILS = ["sasmyjantes@gmail.com", "bakengela.shamba@upc.ac.cd"];
 
 class AuthStorage implements IAuthStorage {
   async getUser(id: string): Promise<User | undefined> {
@@ -13,9 +17,15 @@ class AuthStorage implements IAuthStorage {
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const superAdmins = ['sasmyjantes@gmail.com', 'bakengela.shamba@upc.ac.cd'];
-    const role = superAdmins.includes(userData.email || '') ? 'super_admin' : (userData.role || 'student');
+    const role = SUPER_ADMIN_EMAILS.includes(userData.email || "")
+      ? "super_admin"
+      : userData.role || "student";
     const finalData = { ...userData, role, libraryId: userData.libraryId || 1 };
 
     if (finalData.email) {
@@ -50,6 +60,24 @@ class AuthStorage implements IAuthStorage {
           role: finalData.role,
           updatedAt: new Date(),
         },
+      })
+      .returning();
+    return user;
+  }
+
+  async createLocalUser(data: { email: string; password: string; firstName: string; lastName: string }): Promise<User> {
+    const role = SUPER_ADMIN_EMAILS.includes(data.email) ? "super_admin" : "student";
+    const [user] = await db
+      .insert(users)
+      .values({
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role,
+        points: 0,
+        libraryId: 1,
+        updatedAt: new Date(),
       })
       .returning();
     return user;
