@@ -742,11 +742,35 @@ export async function registerRoutes(
   return httpServer;
 }
 
+async function ensureDefaultLibrary(): Promise<number> {
+  const existing = await storage.getLibraries();
+  if (existing.length > 0) return existing[0].id;
+
+  const lib = await storage.createLibrary({
+    name: "Bibliothèque Universitaire",
+    slug: "bibliotheque-universitaire",
+    universityName: "Université",
+    description: "Bibliothèque universitaire principale",
+    primaryColor: "#052c65",
+    secondaryColor: "#C9A84C",
+    subscriptionTier: "premium",
+    subscriptionStatus: "active",
+    isActive: 1,
+    premiumSupport: 0,
+    storageLimitTb: 6,
+    extraStorageTb: 0,
+    storageUsedBytes: "0",
+  });
+  return lib.id;
+}
+
 async function createTestAccounts() {
+  const libraryId = await ensureDefaultLibrary();
+
   const testUsers = [
-    { id: "demo-director", email: "director@example.com", firstName: "Jean", lastName: "Directeur", role: "director", libraryId: 1 },
-    { id: "demo-professor", email: "professor@example.com", firstName: "Marie", lastName: "Professeur", role: "professor", libraryId: 1 },
-    { id: "demo-student", email: "student@example.com", firstName: "Luc", lastName: "Etudiant", role: "student", libraryId: 1 },
+    { id: "demo-director", email: "director@example.com", firstName: "Jean", lastName: "Directeur", role: "director", libraryId },
+    { id: "demo-professor", email: "professor@example.com", firstName: "Marie", lastName: "Professeur", role: "professor", libraryId },
+    { id: "demo-student", email: "student@example.com", firstName: "Luc", lastName: "Etudiant", role: "student", libraryId },
   ];
 
   for (const u of testUsers) {
@@ -762,28 +786,30 @@ async function createTestAccounts() {
 }
 
 async function seedDatabase() {
-  const existing = await storage.getRewards();
+  const libraryId = await ensureDefaultLibrary();
+
+  const existing = await storage.getRewards(libraryId);
   if (existing.length === 0) {
     await storage.createReward({
       title: "Bon Cafétéria",
       description: "Obtenez un repas gratuit à la cafétéria universitaire.",
       pointsRequired: 500,
       imageUrl: null,
-      libraryId: 1,
+      libraryId,
     });
     await storage.createReward({
       title: "Exonération Frais de Retard",
       description: "Annulation des frais de retard de la bibliothèque.",
       pointsRequired: 300,
       imageUrl: null,
-      libraryId: 1,
+      libraryId,
     });
     await storage.createReward({
       title: "Accès Revues Premium",
       description: "Un mois d'accès aux revues scientifiques premium.",
       pointsRequired: 1000,
       imageUrl: null,
-      libraryId: 1,
+      libraryId,
     });
   }
 }

@@ -25,6 +25,12 @@ Key features:
 - **User library assignment** — Super admins can transfer users between libraries
 - **Replit Auth** integration via OpenID Connect for authentication
 
+## Recent Fixes & Changes
+
+- **Bug fix**: Database tables were missing on fresh deployments. Fixed by running `npm run db:push` to create all tables.
+- **Bug fix**: `seedDatabase()` and `createTestAccounts()` referenced `libraryId: 1` (hardcoded) before any library existed in the database, causing a foreign key violation on startup. Fixed by adding `ensureDefaultLibrary()` which creates the default library first if none exist, then uses its real ID.
+- **Documentation**: Added 4 new technical sections to `/documentation`: Architecture Technique, Modele de Donnees, Reference API REST, Securite & Abonnements.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
