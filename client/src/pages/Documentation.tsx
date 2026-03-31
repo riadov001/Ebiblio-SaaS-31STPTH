@@ -1,17 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import {
   BookOpen, LayoutDashboard, Library, Upload, Search, Globe, Lightbulb,
   Award, CheckSquare, Shield, Users, ChevronDown, ChevronRight,
   ArrowRight, Star, Zap, Lock, FileText, Database, Settings,
-  HelpCircle, ExternalLink, BookMarked, Layers, BarChart3, Download
+  HelpCircle, ExternalLink, BookMarked, Layers, BarChart3, Download, Printer
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type SectionId = 'overview' | 'dashboard' | 'catalog' | 'submit' | 'search' | 'sources' | 'suggestions' | 'rewards' | 'approvals' | 'admin' | 'roles' | 'points' | 'faq' | 'architecture' | 'datamodel' | 'apiref' | 'security';
+type SectionId = 'overview' | 'dashboard' | 'catalog' | 'submit' | 'search' | 'sources' | 'suggestions' | 'rewards' | 'approvals' | 'roles' | 'points' | 'faq';
 
 interface DocSection {
   id: SectionId;
@@ -31,14 +32,9 @@ const sections: DocSection[] = [
   { id: 'suggestions', title: "Suggestions", icon: Lightbulb, color: "text-amber-600", bg: "bg-amber-50" },
   { id: 'rewards', title: "Recompenses", icon: Award, color: "text-purple-600", bg: "bg-purple-50" },
   { id: 'approvals', title: "Approbations", icon: CheckSquare, color: "text-green-600", bg: "bg-green-50" },
-  { id: 'admin', title: "Super Admin", icon: Shield, color: "text-red-600", bg: "bg-red-50" },
   { id: 'roles', title: "Roles et Permissions", icon: Users, color: "text-orange-600", bg: "bg-orange-50" },
   { id: 'points', title: "Systeme de Points", icon: Star, color: "text-yellow-600", bg: "bg-yellow-50" },
   { id: 'faq', title: "Questions Frequentes", icon: HelpCircle, color: "text-slate-600", bg: "bg-slate-100" },
-  { id: 'architecture', title: "Architecture Technique", icon: Layers, color: "text-sky-600", bg: "bg-sky-50" },
-  { id: 'datamodel', title: "Modele de Donnees", icon: Database, color: "text-pink-600", bg: "bg-pink-50" },
-  { id: 'apiref', title: "Reference API", icon: ExternalLink, color: "text-lime-600", bg: "bg-lime-50" },
-  { id: 'security', title: "Securite & Abonnements", icon: Lock, color: "text-rose-600", bg: "bg-rose-50" },
 ];
 
 function ScreenshotPlaceholder({ title, description, steps }: { title: string; description: string; steps: { label: string; desc: string }[] }) {
@@ -101,9 +97,26 @@ export default function Documentation() {
   const { user } = useAuth();
   const userRole = (user as any)?.role || 'student';
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
+  const [printMode, setPrintMode] = useState(false);
 
-  const renderContent = () => {
-    switch (activeSection) {
+  useEffect(() => {
+    if (printMode) {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 400);
+      const handleAfterPrint = () => setPrintMode(false);
+      window.addEventListener('afterprint', handleAfterPrint, { once: true });
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('afterprint', handleAfterPrint);
+      };
+    }
+  }, [printMode]);
+
+  const handleExportPDF = () => setPrintMode(true);
+
+  const renderContent = (sectionId: SectionId = activeSection) => {
+    switch (sectionId) {
       case 'overview':
         return (
           <div className="space-y-6">
@@ -501,100 +514,6 @@ export default function Documentation() {
           </div>
         );
 
-      case 'admin':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-display font-bold text-slate-900 mb-2">Panneau Super Admin</h2>
-              <Badge variant="destructive" className="mb-3">Super Admins uniquement</Badge>
-              <p className="text-slate-600 leading-relaxed">
-                Le panneau Super Admin offre un controle complet sur la plateforme multi-tenant, 
-                incluant la gestion des bibliotheques, utilisateurs, ressources et recompenses.
-              </p>
-            </div>
-
-            <CollapsibleSection title="Vue d'ensemble - Statistiques globales" defaultOpen>
-              <div className="space-y-3">
-                <p className="text-sm text-slate-600">Statistiques agregees de toutes les bibliotheques de la plateforme.</p>
-                <ScreenshotPlaceholder
-                  title="Tableau de bord global"
-                  description="Vue consolidee de toutes les bibliotheques."
-                  steps={[
-                    { label: "Statistiques totales", desc: "Total utilisateurs, ressources, recompenses et suggestions a travers toutes les bibliotheques." },
-                    { label: "Repartition par bibliotheque", desc: "Tableau detaille montrant les utilisateurs, ressources et suggestions par bibliotheque." },
-                    { label: "Graphiques globaux", desc: "Camembert des ressources par type et barres des disciplines les plus representees." },
-                    { label: "Export de donnees", desc: "Boutons pour telecharger les donnees par bibliotheque ou toutes les donnees en JSON." }
-                  ]}
-                />
-              </div>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Gestion des Bibliotheques">
-              <div className="space-y-3">
-                <p className="text-sm text-slate-600">Creer et gerer les bibliotheques universitaires de la plateforme.</p>
-                <ScreenshotPlaceholder
-                  title="CRUD Bibliotheques"
-                  description="Operations de creation, modification et suppression."
-                  steps={[
-                    { label: "Ajouter une bibliotheque", desc: "Cliquez 'Ajouter' et remplissez : nom, slug, nom d'universite, email, URL, description." },
-                    { label: "Modifier une bibliotheque", desc: "Cliquez l'icone d'edition pour modifier les informations." },
-                    { label: "Activer/Desactiver", desc: "Basculez le statut actif/inactif d'une bibliotheque." },
-                    { label: "Supprimer", desc: "Supprimez une bibliotheque (la bibliotheque UPC par defaut ne peut pas etre supprimee)." }
-                  ]}
-                />
-              </div>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Gestion des Utilisateurs">
-              <div className="space-y-3">
-                <p className="text-sm text-slate-600">Gerer les roles, points et affectations des utilisateurs.</p>
-                <ScreenshotPlaceholder
-                  title="Administration des utilisateurs"
-                  description="Fonctionnalites de gestion des comptes utilisateurs."
-                  steps={[
-                    { label: "Liste des utilisateurs", desc: "Tableau avec nom, email, role, points et bibliotheque de chaque utilisateur." },
-                    { label: "Filtrer par bibliotheque", desc: "Selectionnez une bibliotheque pour voir uniquement ses utilisateurs." },
-                    { label: "Changer le role", desc: "Selectionnez un nouveau role : Etudiant, Professeur, Directeur, Super Admin." },
-                    { label: "Modifier les points", desc: "Ajustez manuellement le nombre de points d'un utilisateur." },
-                    { label: "Changer de bibliotheque", desc: "Deplacez un utilisateur vers une autre bibliotheque." },
-                    { label: "Supprimer un utilisateur", desc: "Supprimez un compte utilisateur de la plateforme." }
-                  ]}
-                />
-              </div>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Gestion des Ressources">
-              <div className="space-y-3">
-                <p className="text-sm text-slate-600">Superviser toutes les ressources de la plateforme.</p>
-                <ScreenshotPlaceholder
-                  title="Administration des ressources"
-                  description="Vue et gestion de toutes les ressources."
-                  steps={[
-                    { label: "Liste complete", desc: "Toutes les ressources avec leur statut, type et discipline." },
-                    { label: "Approuver/Rejeter", desc: "Changez le statut d'une ressource directement depuis le tableau." },
-                    { label: "Supprimer", desc: "Supprimez une ressource de la base de donnees." }
-                  ]}
-                />
-              </div>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Gestion des Recompenses">
-              <div className="space-y-3">
-                <p className="text-sm text-slate-600">Creer et gerer les recompenses pour les etudiants.</p>
-                <ScreenshotPlaceholder
-                  title="Administration des recompenses"
-                  description="Creation de nouvelles recompenses."
-                  steps={[
-                    { label: "Liste des recompenses", desc: "Toutes les recompenses avec leur titre, description et cout en points." },
-                    { label: "Ajouter une recompense", desc: "Remplissez le titre, la description, le cout en points et l'URL de l'image." },
-                    { label: "Gerer les echanges", desc: "Suivez quelles recompenses ont ete echangees par les etudiants." }
-                  ]}
-                />
-              </div>
-            </CollapsibleSection>
-          </div>
-        );
-
       case 'roles':
         return (
           <div className="space-y-6">
@@ -814,493 +733,6 @@ export default function Documentation() {
           </div>
         );
 
-      case 'architecture':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-display font-bold text-slate-900 mb-2">Architecture Technique</h2>
-              <p className="text-slate-600 leading-relaxed">
-                E-Biblio est une application web full-stack multi-tenant construite avec une architecture moderne separant clairement le frontend, le backend et la base de donnees.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="p-5 border-sky-200 bg-sky-50/40">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center">
-                    <LayoutDashboard className="w-4 h-4" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-800">Frontend</h3>
-                </div>
-                <ul className="space-y-1.5 text-xs text-slate-600">
-                  <li><strong>React 18</strong> + TypeScript</li>
-                  <li><strong>Vite</strong> — serveur de developpement & bundler</li>
-                  <li><strong>Wouter</strong> — routage cote client</li>
-                  <li><strong>TanStack Query v5</strong> — gestion d'etat serveur</li>
-                  <li><strong>Shadcn UI</strong> + Radix UI + Tailwind CSS</li>
-                  <li><strong>Framer Motion</strong> — animations</li>
-                  <li><strong>Lucide React</strong> — icones</li>
-                </ul>
-              </Card>
-              <Card className="p-5 border-emerald-200 bg-emerald-50/40">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                    <Settings className="w-4 h-4" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-800">Backend</h3>
-                </div>
-                <ul className="space-y-1.5 text-xs text-slate-600">
-                  <li><strong>Node.js</strong> + Express.js</li>
-                  <li><strong>tsx</strong> — execution TypeScript natif</li>
-                  <li><strong>Drizzle ORM</strong> — ORM type-safe</li>
-                  <li><strong>Zod</strong> — validation des donnees</li>
-                  <li><strong>Passport.js</strong> — authentification OIDC</li>
-                  <li><strong>express-session</strong> — gestion des sessions</li>
-                  <li>Frontend + Backend sur le meme port (5000)</li>
-                </ul>
-              </Card>
-              <Card className="p-5 border-violet-200 bg-violet-50/40">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center">
-                    <Database className="w-4 h-4" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-800">Infrastructure</h3>
-                </div>
-                <ul className="space-y-1.5 text-xs text-slate-600">
-                  <li><strong>PostgreSQL</strong> — base de donnees relationnelle</li>
-                  <li><strong>Auth locale</strong> — email + mot de passe (bcryptjs)</li>
-                  <li><strong>Google Cloud Storage</strong> — stockage fichiers</li>
-                  <li><strong>Replit Object Storage</strong> — integration stockage</li>
-                  <li><strong>Neon DB</strong> — PostgreSQL cloud</li>
-                </ul>
-              </Card>
-            </div>
-
-            <Card className="p-5 border-slate-200">
-              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <Layers className="w-5 h-5 text-sky-600" /> Flux de donnees
-              </h3>
-              <div className="space-y-3">
-                {[
-                  { step: "1", label: "Navigateur (React)", desc: "L'utilisateur interagit avec le frontend React. TanStack Query gere les requetes HTTP vers le backend.", color: "bg-sky-100 text-sky-700" },
-                  { step: "2", label: "Express API (Node.js)", desc: "Le backend valide les requetes (Zod), verifie l'authentification (Passport), applique les permissions RBAC.", color: "bg-emerald-100 text-emerald-700" },
-                  { step: "3", label: "Storage Interface", desc: "La couche storage (IStorage) abstrait toutes les operations CRUD. Les routes restent fines.", color: "bg-amber-100 text-amber-700" },
-                  { step: "4", label: "Drizzle ORM + PostgreSQL", desc: "Drizzle traduit les appels TypeScript en SQL type-safe. Les schemas sont partages entre frontend et backend.", color: "bg-violet-100 text-violet-700" },
-                ].map(({ step, label, desc, color }) => (
-                  <div key={step} className="flex items-start gap-3">
-                    <span className={cn("w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5", color)}>{step}</span>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">{label}</p>
-                      <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card className="p-5 border-slate-200">
-              <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-slate-500" /> Structure des fichiers cles
-              </h3>
-              <div className="space-y-2 font-mono text-xs text-slate-600">
-                {[
-                  { path: "shared/schema.ts", desc: "Tables Drizzle + schemas Zod partages" },
-                  { path: "shared/routes.ts", desc: "Contrat API type-safe (routes + schemas)" },
-                  { path: "shared/models/auth.ts", desc: "Tables users, libraries, sessions" },
-                  { path: "server/index.ts", desc: "Point d'entree Express + Vite SSR" },
-                  { path: "server/routes.ts", desc: "Tous les endpoints API REST" },
-                  { path: "server/storage.ts", desc: "Interface IStorage + implementation DB" },
-                  { path: "server/db.ts", desc: "Connexion Drizzle + PostgreSQL" },
-                  { path: "client/src/App.tsx", desc: "Routeur React + ProtectedRoute" },
-                  { path: "client/src/pages/", desc: "Toutes les pages de l'application" },
-                  { path: "client/src/hooks/", desc: "Hooks React reutilisables (useAuth, etc.)" },
-                ].map(({ path, desc }) => (
-                  <div key={path} className="flex items-start gap-3 p-2 bg-slate-50 rounded-lg">
-                    <code className="text-sky-700 shrink-0">{path}</code>
-                    <span className="text-slate-500">— {desc}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-        );
-
-      case 'datamodel':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-display font-bold text-slate-900 mb-2">Modele de Donnees</h2>
-              <p className="text-slate-600 leading-relaxed">
-                La base de donnees PostgreSQL est structuree avec 7 tables principales gerees via Drizzle ORM.
-                Les schemas sont definis dans <code className="bg-slate-100 px-1 rounded text-sm">shared/schema.ts</code> et 
-                <code className="bg-slate-100 px-1 rounded text-sm ml-1">shared/models/auth.ts</code>.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {[
-                {
-                  table: "libraries",
-                  color: "border-blue-300 bg-blue-50/30",
-                  badge: "bg-blue-100 text-blue-700",
-                  desc: "Bibliotheques universitaires (multi-tenant). Chaque bibliotheque a son propre abonnement, couleurs et donnees isolees.",
-                  fields: [
-                    { name: "id", type: "serial PK" },
-                    { name: "name", type: "text NOT NULL" },
-                    { name: "slug", type: "text UNIQUE" },
-                    { name: "universityName", type: "text NOT NULL" },
-                    { name: "subscriptionTier", type: "text (free|standard|premium)" },
-                    { name: "primaryColor, secondaryColor", type: "text" },
-                    { name: "storageLimitTb, storageUsedBytes", type: "integer, text" },
-                    { name: "isActive", type: "integer (0|1)" },
-                  ]
-                },
-                {
-                  table: "users",
-                  color: "border-green-300 bg-green-50/30",
-                  badge: "bg-green-100 text-green-700",
-                  desc: "Comptes utilisateurs. L'ID est un varchar UUID genere par Replit Auth ou manuellement. Chaque utilisateur appartient a une bibliotheque.",
-                  fields: [
-                    { name: "id", type: "varchar PK (UUID)" },
-                    { name: "email", type: "varchar UNIQUE" },
-                    { name: "firstName, lastName", type: "varchar" },
-                    { name: "role", type: "text (student|professor|director|admin|super_admin)" },
-                    { name: "points", type: "integer DEFAULT 0" },
-                    { name: "libraryId", type: "integer FK → libraries.id" },
-                    { name: "discipline, bio, phone, address", type: "text" },
-                    { name: "badgeLevel", type: "text (newcomer...)" },
-                  ]
-                },
-                {
-                  table: "resources",
-                  color: "border-amber-300 bg-amber-50/30",
-                  badge: "bg-amber-100 text-amber-700",
-                  desc: "Ressources academiques soumises et approuvees. Un statut (pending/approved/rejected) gere le flux d'approbation.",
-                  fields: [
-                    { name: "id", type: "serial PK" },
-                    { name: "title", type: "text NOT NULL" },
-                    { name: "type", type: "text (book|article|journal|thesis|...)" },
-                    { name: "source", type: "text (internal|openlibrary|doaj|...)" },
-                    { name: "discipline, language", type: "text" },
-                    { name: "status", type: "text (pending|approved|rejected)" },
-                    { name: "author, publisher, isbn", type: "text" },
-                    { name: "url, downloadUrl, description", type: "text" },
-                    { name: "submittedBy", type: "varchar FK → users.id" },
-                    { name: "libraryId", type: "integer FK → libraries.id" },
-                  ]
-                },
-                {
-                  table: "suggestions",
-                  color: "border-orange-300 bg-orange-50/30",
-                  badge: "bg-orange-100 text-orange-700",
-                  desc: "Suggestions de ressources proposees par les utilisateurs. Plus legeres que les ressources completes.",
-                  fields: [
-                    { name: "id", type: "serial PK" },
-                    { name: "title", type: "text NOT NULL" },
-                    { name: "url, description", type: "text" },
-                    { name: "type, discipline", type: "text" },
-                    { name: "status", type: "text (pending|approved|rejected)" },
-                    { name: "adminNote", type: "text" },
-                    { name: "submittedBy", type: "varchar FK → users.id" },
-                    { name: "libraryId", type: "integer FK → libraries.id" },
-                  ]
-                },
-                {
-                  table: "rewards",
-                  color: "border-purple-300 bg-purple-50/30",
-                  badge: "bg-purple-100 text-purple-700",
-                  desc: "Recompenses creees par les admins. Les etudiants les echangent contre leurs points via la table user_rewards.",
-                  fields: [
-                    { name: "id", type: "serial PK" },
-                    { name: "title, description", type: "text NOT NULL" },
-                    { name: "pointsRequired", type: "integer NOT NULL" },
-                    { name: "imageUrl", type: "text" },
-                    { name: "libraryId", type: "integer FK → libraries.id" },
-                  ]
-                },
-                {
-                  table: "user_rewards",
-                  color: "border-pink-300 bg-pink-50/30",
-                  badge: "bg-pink-100 text-pink-700",
-                  desc: "Table de jonction enregistrant les echanges de recompenses. La deduction de points se fait en transaction atomique.",
-                  fields: [
-                    { name: "id", type: "serial PK" },
-                    { name: "userId", type: "varchar FK → users.id NOT NULL" },
-                    { name: "rewardId", type: "integer FK → rewards.id NOT NULL" },
-                    { name: "redeemedAt", type: "timestamp DEFAULT NOW()" },
-                  ]
-                },
-                {
-                  table: "media",
-                  color: "border-teal-300 bg-teal-50/30",
-                  badge: "bg-teal-100 text-teal-700",
-                  desc: "Fichiers uploades (PDFs, images) stockes dans Google Cloud Storage. Les metadonnees sont en base, les fichiers dans l'object storage.",
-                  fields: [
-                    { name: "id", type: "serial PK" },
-                    { name: "fileName, originalName", type: "text NOT NULL" },
-                    { name: "mimeType", type: "text NOT NULL" },
-                    { name: "size", type: "integer NOT NULL (bytes)" },
-                    { name: "objectPath", type: "text NOT NULL (chemin GCS)" },
-                    { name: "url", type: "text (URL publique)" },
-                    { name: "resourceId", type: "integer FK → resources.id" },
-                    { name: "uploadedBy", type: "varchar FK → users.id" },
-                    { name: "libraryId", type: "integer FK → libraries.id" },
-                  ]
-                },
-              ].map(({ table, color, badge, desc, fields }) => (
-                <Card key={table} className={cn("p-5 border", color)}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <code className={cn("text-xs font-bold px-2 py-0.5 rounded", badge)}>{table}</code>
-                  </div>
-                  <p className="text-xs text-slate-600 mb-3 leading-relaxed">{desc}</p>
-                  <div className="space-y-1">
-                    {fields.map(({ name, type }) => (
-                      <div key={name} className="flex items-start gap-2 text-xs">
-                        <code className="text-slate-800 font-semibold shrink-0 w-48">{name}</code>
-                        <span className="text-slate-500">{type}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'apiref':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-display font-bold text-slate-900 mb-2">Reference API REST</h2>
-              <p className="text-slate-600 leading-relaxed">
-                Tous les endpoints sont definis dans <code className="bg-slate-100 px-1 rounded text-sm">server/routes.ts</code> 
-                et leur contrat (input/output Zod) dans <code className="bg-slate-100 px-1 rounded text-sm ml-1">shared/routes.ts</code>.
-                L'URL de base est <code className="bg-slate-100 px-1 rounded text-sm ml-1">/api</code>.
-              </p>
-            </div>
-
-            {[
-              {
-                group: "Authentification",
-                color: "bg-slate-100 text-slate-700",
-                endpoints: [
-                  { method: "GET", path: "/api/auth/user", auth: "Auth", desc: "Retourne le profil de l'utilisateur connecte (401 si non connecte)" },
-                  { method: "POST", path: "/api/auth/login", auth: "Public", desc: "Connexion avec email + mot de passe. Body: { email, password }" },
-                  { method: "POST", path: "/api/auth/register", auth: "Public", desc: "Creation de compte. Body: { email, password, firstName, lastName }" },
-                  { method: "POST", path: "/api/auth/logout", auth: "Auth", desc: "Deconnexion — detruit la session serveur" },
-                ]
-              },
-              {
-                group: "Ressources",
-                color: "bg-blue-100 text-blue-700",
-                endpoints: [
-                  { method: "GET", path: "/api/resources", auth: "Public", desc: "Liste les ressources (filtres: status, type, source, discipline, search)" },
-                  { method: "GET", path: "/api/resources/:id", auth: "Public", desc: "Retourne une ressource par ID" },
-                  { method: "POST", path: "/api/resources", auth: "Auth", desc: "Soumet une nouvelle ressource (statut: pending)" },
-                  { method: "PATCH", path: "/api/resources/:id", auth: "Admin", desc: "Met a jour une ressource (statut, details). +50pts si approuvee." },
-                  { method: "DELETE", path: "/api/resources/:id", auth: "Admin", desc: "Supprime une ressource et ses medias associes" },
-                ]
-              },
-              {
-                group: "Recherche Externe",
-                color: "bg-violet-100 text-violet-700",
-                endpoints: [
-                  { method: "GET", path: "/api/external/search", auth: "Standard+", desc: "Recherche dans OpenLibrary et/ou DOAJ. Params: q, source, author, yearFrom, yearTo, language, sort, page, limit" },
-                ]
-              },
-              {
-                group: "Suggestions",
-                color: "bg-amber-100 text-amber-700",
-                endpoints: [
-                  { method: "GET", path: "/api/suggestions", auth: "Admin", desc: "Liste toutes les suggestions (filtres: status)" },
-                  { method: "GET", path: "/api/suggestions/mine", auth: "Auth", desc: "Liste les suggestions de l'utilisateur courant" },
-                  { method: "POST", path: "/api/suggestions", auth: "Auth", desc: "Cree une suggestion (+10 pts automatiquement)" },
-                  { method: "PATCH", path: "/api/suggestions/:id", auth: "Admin", desc: "Approuve/rejette une suggestion avec note optionnelle" },
-                ]
-              },
-              {
-                group: "Recompenses",
-                color: "bg-purple-100 text-purple-700",
-                endpoints: [
-                  { method: "GET", path: "/api/rewards", auth: "Public", desc: "Liste les recompenses de la bibliotheque courante" },
-                  { method: "POST", path: "/api/rewards", auth: "Admin", desc: "Cree une nouvelle recompense" },
-                  { method: "POST", path: "/api/rewards/:id/redeem", auth: "Auth", desc: "Echange une recompense (transaction atomique: deduction points)" },
-                ]
-              },
-              {
-                group: "Utilisateurs & Profils",
-                color: "bg-green-100 text-green-700",
-                endpoints: [
-                  { method: "GET", path: "/api/users/:id", auth: "Auth", desc: "Retourne le profil d'un utilisateur (soi-meme ou admin)" },
-                  { method: "PATCH", path: "/api/users/:id/profile", auth: "Auth", desc: "Modifie le profil (nom, bio, phone, discipline, avatar)" },
-                  { method: "GET", path: "/api/admin/users", auth: "Admin", desc: "Liste tous les utilisateurs de la bibliotheque" },
-                  { method: "POST", path: "/api/admin/users", auth: "LibAdmin", desc: "Cree un utilisateur manuellement" },
-                  { method: "PATCH", path: "/api/admin/users/:id/role", auth: "SuperAdmin", desc: "Change le role d'un utilisateur" },
-                  { method: "PATCH", path: "/api/admin/users/:id/points", auth: "Admin", desc: "Modifie manuellement les points d'un utilisateur" },
-                  { method: "DELETE", path: "/api/admin/users/:id", auth: "LibAdmin", desc: "Supprime un utilisateur" },
-                ]
-              },
-              {
-                group: "Bibliotheques (Super Admin)",
-                color: "bg-red-100 text-red-700",
-                endpoints: [
-                  { method: "GET", path: "/api/admin/libraries", auth: "SuperAdmin", desc: "Liste toutes les bibliotheques" },
-                  { method: "POST", path: "/api/admin/libraries", auth: "SuperAdmin", desc: "Cree une nouvelle bibliotheque" },
-                  { method: "PATCH", path: "/api/admin/libraries/:id", auth: "SuperAdmin", desc: "Modifie une bibliotheque" },
-                  { method: "DELETE", path: "/api/admin/libraries/:id", auth: "SuperAdmin", desc: "Supprime une bibliotheque et toutes ses donnees" },
-                  { method: "PATCH", path: "/api/admin/libraries/:id/subscription", auth: "SuperAdmin", desc: "Change le niveau d'abonnement et le stockage" },
-                  { method: "GET", path: "/api/admin/stats", auth: "Admin", desc: "Statistiques de la bibliotheque courante" },
-                  { method: "GET", path: "/api/admin/global-stats", auth: "SuperAdmin", desc: "Statistiques globales de toute la plateforme" },
-                  { method: "GET", path: "/api/admin/export/library/:id", auth: "SuperAdmin", desc: "Export JSON d'une bibliotheque" },
-                  { method: "GET", path: "/api/admin/export/all", auth: "SuperAdmin", desc: "Export JSON de toute la plateforme" },
-                ]
-              },
-            ].map(({ group, color, endpoints }) => (
-              <CollapsibleSection key={group} title={group} defaultOpen={group === "Ressources"}>
-                <div className="space-y-2 mt-1">
-                  {endpoints.map(({ method, path, auth, desc }) => (
-                    <div key={path} className="flex flex-wrap items-start gap-2 p-2.5 bg-slate-50 rounded-lg">
-                      <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0", 
-                        method === 'GET' ? 'bg-blue-100 text-blue-700' :
-                        method === 'POST' ? 'bg-green-100 text-green-700' :
-                        method === 'PATCH' ? 'bg-amber-100 text-amber-700' :
-                        'bg-red-100 text-red-700'
-                      )}>{method}</span>
-                      <code className="text-xs text-slate-800 font-mono shrink-0">{path}</code>
-                      <span className={cn("text-[10px] px-1.5 py-0.5 rounded shrink-0", color)}>{auth}</span>
-                      <span className="text-xs text-slate-500 leading-relaxed">{desc}</span>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            ))}
-          </div>
-        );
-
-      case 'security':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-display font-bold text-slate-900 mb-2">Securite & Abonnements</h2>
-              <p className="text-slate-600 leading-relaxed">
-                E-Biblio implemente plusieurs couches de securite : authentification, controle d'acces par role (RBAC), 
-                isolation multi-tenant, et fonctionnalites gatees par niveau d'abonnement.
-              </p>
-            </div>
-
-            <Card className="p-5 border-slate-200">
-              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <Shield className="w-5 h-5 text-blue-600" /> Authentification & Sessions
-              </h3>
-              <div className="space-y-3 text-sm text-slate-600">
-                <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
-                  <ArrowRight className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="text-slate-800">Authentification locale (email + mot de passe)</strong>
-                    <p className="text-xs mt-0.5">Les mots de passe sont haches avec <code>bcryptjs</code> (10 rounds) avant stockage. Aucun mot de passe en clair n'est jamais persiste. Inscription via <code>POST /api/auth/register</code>, connexion via <code>POST /api/auth/login</code>.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
-                  <ArrowRight className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="text-slate-800">Sessions PostgreSQL</strong>
-                    <p className="text-xs mt-0.5">Les sessions sont stockees dans la table <code>sessions</code> (PostgreSQL) via <code>connect-pg-simple</code>. La session stocke uniquement l'ID utilisateur. Cookie HTTPOnly, secure en production, expiration 7 jours.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
-                  <ArrowRight className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="text-slate-800">Middleware d'autorisation</strong>
-                    <p className="text-xs mt-0.5">A chaque requete, un middleware charge l'utilisateur depuis la session et l'attache a <code>req.user</code>. Chaque route protegee utilise : <code>requireAuth</code>, <code>requireAdminRole</code>, <code>requireLibraryAdmin</code>, ou <code>requireSuperAdmin</code>.</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-5 border-slate-200">
-              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <Users className="w-5 h-5 text-orange-600" /> Hierarchie des roles (RBAC)
-              </h3>
-              <div className="space-y-2">
-                {[
-                  { role: "super_admin", level: 4, perms: "Acces complet a toute la plateforme", color: "bg-red-100 text-red-700" },
-                  { role: "admin", level: 3, perms: "Gestion complete d'une bibliotheque", color: "bg-orange-100 text-orange-700" },
-                  { role: "director", level: 2, perms: "Approbation ressources + toutes perms professeur", color: "bg-purple-100 text-purple-700" },
-                  { role: "professor", level: 1, perms: "Approbation et rejet de ressources", color: "bg-green-100 text-green-700" },
-                  { role: "student", level: 0, perms: "Consultation, soumission, suggestions, recompenses", color: "bg-blue-100 text-blue-700" },
-                ].map(({ role, level, perms, color }) => (
-                  <div key={role} className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-lg">
-                    <Badge className={cn("text-xs shrink-0", color)}>{role}</Badge>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className={cn("w-2 h-2 rounded-full", i <= level ? "bg-primary" : "bg-slate-200")} />
-                      ))}
-                    </div>
-                    <span className="text-xs text-slate-600">{perms}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card className="p-5 border-slate-200">
-              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-600" /> Niveaux d'abonnement
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200">
-                      <th className="text-left py-2 pr-4 text-slate-600 font-semibold">Fonctionnalite</th>
-                      <th className="text-center py-2 px-3 text-slate-500">Gratuit</th>
-                      <th className="text-center py-2 px-3 text-slate-500">Standard</th>
-                      <th className="text-center py-2 px-3 text-slate-500">Premium</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {[
-                      ["Consulter le catalogue", "✓", "✓", "✓"],
-                      ["Sources academiques", "✓", "✓", "✓"],
-                      ["Recherche externe (OpenLibrary/DOAJ)", "✗", "✓", "✓"],
-                      ["Creer des comptes Professeur/Directeur", "✗", "✓", "✓"],
-                      ["Approuver des ressources", "✗", "✓", "✓"],
-                      ["Soumission par les etudiants", "✗", "✗", "✓"],
-                      ["Gestion des recompenses", "✗", "✗", "✓"],
-                      ["Gestion des suggestions", "✗", "✗", "✓"],
-                      ["Stockage fichiers", "1 To", "3 To", "6 To"],
-                      ["Support premium", "✗", "✗", "✓"],
-                    ].map(([feat, free, std, prem]) => (
-                      <tr key={feat}>
-                        <td className="py-2 pr-4 text-slate-700">{feat}</td>
-                        <td className={cn("text-center py-2 px-3", free === "✗" ? "text-red-400" : "text-green-600")}>{free}</td>
-                        <td className={cn("text-center py-2 px-3", std === "✗" ? "text-red-400" : "text-green-600")}>{std}</td>
-                        <td className={cn("text-center py-2 px-3", prem === "✗" ? "text-red-400" : "text-green-600")}>{prem}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-3 flex gap-4 text-xs text-slate-500">
-                <span>Gratuit: <strong>0 €/mois</strong></span>
-                <span>Standard: <strong>39,99 €/mois</strong></span>
-                <span>Premium: <strong>69,99 €/mois</strong></span>
-              </div>
-            </Card>
-
-            <Card className="p-5 border-slate-200">
-              <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <Database className="w-5 h-5 text-teal-600" /> Isolation Multi-Tenant
-              </h3>
-              <div className="space-y-2 text-sm text-slate-600">
-                <p className="text-xs leading-relaxed">Toutes les tables de donnees (resources, suggestions, rewards, users, media) incluent un champ <code className="bg-slate-100 px-1 rounded">library_id</code> qui assure l'isolation des donnees entre bibliotheques. Les requetes API filtrent automatiquement par la bibliotheque de l'utilisateur connecte, sauf pour les Super Admins qui ont acces a toutes les donnees.</p>
-                <div className="flex items-start gap-2 p-3 bg-teal-50 rounded-lg mt-2">
-                  <ArrowRight className="w-4 h-4 text-teal-500 shrink-0 mt-0.5" />
-                  <p className="text-xs"><strong>Garantie d'isolation :</strong> Un utilisateur d'une bibliotheque A ne peut jamais voir, modifier ou acceder aux donnees d'une bibliotheque B, meme par manipulation d'URL.</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        );
-
       default:
         return null;
     }
@@ -1310,20 +742,48 @@ export default function Documentation() {
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
       <main className="flex-1 md:ml-64 p-4 md:p-8 pt-14 md:pt-8">
-        <header className="mb-6 md:mb-8 text-center md:text-left">
-          <div className="flex flex-col md:flex-row items-center gap-3 mb-2 justify-center md:justify-start">
-            <BookOpen className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900 leading-tight" data-testid="text-documentation-title">
-              Documentation E-Biblio
-            </h1>
+        <header className="mb-6 md:mb-8 text-center md:text-left no-print">
+          <div className="flex flex-col md:flex-row items-center gap-3 mb-2 justify-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-8 h-8 text-primary" />
+              <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900 leading-tight" data-testid="text-documentation-title">
+                Documentation E-Biblio
+              </h1>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPDF}
+              className="flex items-center gap-2 text-slate-600 hover:text-slate-900 border-slate-200"
+              data-testid="button-export-pdf"
+            >
+              <Printer className="w-4 h-4" />
+              Exporter en PDF
+            </Button>
           </div>
           <p className="text-sm md:text-base text-slate-500">
             Guide complet de toutes les fonctionnalites de la plateforme.
           </p>
         </header>
 
+        {printMode ? (
+          <div className="space-y-0">
+            <div className="text-center mb-8 print-header">
+              <BookOpen className="w-10 h-10 text-primary mx-auto mb-2" />
+              <h1 className="text-2xl font-bold text-slate-900">Documentation E-Biblio</h1>
+              <p className="text-slate-500 text-sm mt-1">Guide complet de toutes les fonctionnalites de la plateforme</p>
+            </div>
+            {sections.map((sectionItem) => (
+              <div key={sectionItem.id} className="mb-8 pb-8 border-b border-slate-200 last:border-0">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 md:p-8">
+                  {renderContent(sectionItem.id)}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="flex flex-col lg:flex-row gap-6">
-          <nav className="lg:w-64 shrink-0">
+          <nav className="lg:w-64 shrink-0 no-print">
             <div className="lg:sticky lg:top-4 space-y-1 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 pt-1 pb-2">Sections</p>
               {sections.map((section) => (
@@ -1351,6 +811,7 @@ export default function Documentation() {
             </div>
           </div>
         </div>
+        )}
       </main>
     </div>
   );

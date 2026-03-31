@@ -94,3 +94,23 @@
     @apply bg-white/10 text-white shadow-md border-l-4 border-secondary rounded-l-none rounded-r-xl;
   }
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  aside {
+    display: none !important;
+  }
+  main {
+    margin-left: 0 !important;
+    padding-top: 1rem !important;
+  }
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+  body {
+    font-size: 12px;
+  }
+}
